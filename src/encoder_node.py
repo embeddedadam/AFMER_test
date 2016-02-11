@@ -5,7 +5,6 @@ import math
 import numpy
 import time
 import RPi.GPIO as GPIO
-import signal
 
 # Messages
 from std_msgs.msg import Float32
@@ -18,8 +17,8 @@ class LLC_encoder:
         GPIO.setup(self.a, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(self.b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=300)
-        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=300)
+        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=1)
+        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=1)
 
         self.gear_ratio = 3.6
         self.enc_impulses_per_motor_rot = 20
@@ -29,7 +28,7 @@ class LLC_encoder:
         self.aLastState = False
         self.bLastState = False
         self.counter = 0
-        self.aLastState = self.a.value
+        self.aLastState = GPIO.input(self.a)
 
     def read_rotations(self):
         return self.counter / self.enc_impulses_per_wheel_rot
@@ -37,7 +36,7 @@ class LLC_encoder:
     def reset(self):
         self.counter = 0
 
-    def count(self):
+    def count(self, channel):
         self.aState = GPIO.input(self.a)
         self.bState = GPIO.input(self.b)
         if self.aLastState != self.aState:
@@ -47,7 +46,7 @@ class LLC_encoder:
                 self.counter += 1
 
         if self.bLastState != self.bState:
-            if GPIO.INPUT(self.a) == self.bState:
+            if GPIO.input(self.a) == self.bState:
                 self.counter -= 1
             else:
                 self.counter += 1
@@ -90,10 +89,10 @@ class WheelsEncodersPublishers:
         enc3_delta = self.enc3.read_rotations() - self.enc3_data
         enc4_delta = self.enc4.read_rotations() - self.enc4_data
 
-        wheel_1_angular_vel = enc1_delta * 2 * math.pi * self.R / dt
-        wheel_2_angular_vel = enc2_delta * 2 * math.pi * self.R / dt
-        wheel_3_angular_vel = enc3_delta * 2 * math.pi * self.R / dt
-        wheel_4_angular_vel = enc4_delta * 2 * math.pi * self.R / dt
+        wheel_1_angular_vel = enc1_delta * 2 * math.pi / dt
+        wheel_2_angular_vel = enc2_delta * 2 * math.pi / dt
+        wheel_3_angular_vel = enc3_delta * 2 * math.pi / dt
+        wheel_4_angular_vel = enc4_delta * 2 * math.pi / dt
 
         self.wheel_1_vel_publisher.publish(wheel_1_angular_vel)
         self.wheel_2_vel_publisher.publish(wheel_2_angular_vel)

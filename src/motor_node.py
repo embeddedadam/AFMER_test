@@ -66,10 +66,12 @@ class LLC_motor:
         return self.pins["PWR"].value
 
     def forward(self):
-        self.pins["DIR"].on
+        print("forward")
+        self.pins["DIR"].on()
 
     def backward(self):
-        self.pins["DIR"].off
+        print("backward")
+        self.pins["DIR"].off()
 
     def coast(self):
         self.sleep()
@@ -93,9 +95,9 @@ class ControlMotors:
         self.motor4 = LLC_motor(name="motor4")
 
         self.rate = rospy.get_param("~rate", 10)
-        self.Kp = rospy.get_param('~Kp', 1.0)
-        self.Ki = rospy.get_param('~Ki', 1.0)
-        self.Kd = rospy.get_param('~Kd', 1.0)
+        self.Kp = rospy.get_param('~Kp', 0.05)
+        self.Ki = rospy.get_param('~Ki', 0.0)
+        self.Kd = rospy.get_param('~Kd', 0.0)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
         self.motor_max_angular_vel = rospy.get_param('~motor_max_angular_vel', 87.0)
         self.motor_min_angular_vel = rospy.get_param('~motor_min_angular_vel', -87.0)
@@ -123,9 +125,9 @@ class ControlMotors:
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel4_calc_angular_vel", Float32, queue_size=10)
         # Tangential velocity target
         self.wheel1_tangent_vel_target = 0
-        self.wheel2_tangent_vel_target = 0.2
+        self.wheel2_tangent_vel_target = 0
         self.wheel3_tangent_vel_target = 0
-        self.wheel4_tangent_vel_target = 0
+        self.wheel4_tangent_vel_target = 0.5
 
         # Angular velocity target
         self.wheel1_angular_vel_target = 0
@@ -190,7 +192,7 @@ class ControlMotors:
                 self.motor1.wake()
                 if not self.motor1.is_active():
                     ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width1 < 1):
+            if (-1 <= pwm_width1 <= 1):
                 if pwm_width1 >= 0:
                     self.motor1.forward()
                 else:
@@ -208,7 +210,7 @@ class ControlMotors:
                 self.motor2.wake()
                 if not self.motor2.is_active():
                     ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width2 < 1):
+            if (-1 <= pwm_width2 <= 1):
                 if pwm_width2 >= 0:
                     self.motor2.forward()
                 else:
@@ -217,8 +219,9 @@ class ControlMotors:
                 self.pwm.set_pulse_length_in_fraction(self.motor2.pins["PWM"], pwm_width2)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
+        elif not self.motor2.is_active():
             pass
+              #print("blad sterownika2")
 
         # motor3
         if pwm_width3 != self.pwm3_old:
@@ -226,7 +229,7 @@ class ControlMotors:
                 self.motor3.wake()
                 if not self.motor3.is_active():
                     ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width3 < 1):
+            if (-1 <= pwm_width3 <= 1):
                 if pwm_width3 >= 0:
                     self.motor3.forward()
                 else:
@@ -244,7 +247,7 @@ class ControlMotors:
                 self.motor4.wake()
                 if not self.motor4.is_active():
                     ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width4 < 1):
+            if (-1 <= pwm_width4 <= 1):
                 if pwm_width4 >= 0:
                     self.motor4.forward()
                 else:
@@ -264,7 +267,7 @@ class ControlMotors:
 
     def pid_control(self, wheel_pid, target, state):
         if len(wheel_pid) == 0:
-            wheel_pid.update({'time_prev': rospy.Time.now(), 'derivative': 0, 'integral': [0] * 10, 'error_prev': 0,
+            wheel_pid.update({'time_prev': rospy.Time.now(), 'derivative': 0, 'integral': 0, 'error_prev': 0,
                               'error_curr': 0})
 
         wheel_pid['time_curr'] = rospy.Time.now()
@@ -274,25 +277,26 @@ class ControlMotors:
         if wheel_pid['dt'] == 0: return 0
 
         wheel_pid['error_curr'] = target - state
-        wheel_pid['integral'] = wheel_pid['integral'][1:] + [(wheel_pid['error_curr'] * wheel_pid['dt'])]
+        wheel_pid['integral'] = wheel_pid['integral'] + (wheel_pid['error_curr'] * wheel_pid['dt'])
         wheel_pid['derivative'] = (wheel_pid['error_curr'] - wheel_pid['error_prev']) / wheel_pid['dt']
 
         wheel_pid['error_prev'] = wheel_pid['error_curr']
         control_signal = (
-                    self.Kp * wheel_pid['error_curr'] + self.Ki * sum(wheel_pid['integral']) + self.Kd * wheel_pid[
+                    self.Kp * wheel_pid['error_curr'] + self.Ki * wheel_pid['integral'] + self.Kd * wheel_pid[
                 'derivative'])
-        target_new = target + control_signal
-
-        # Ensure control_signal does not flip sign of target velocity
-        if target > 0 and target_new < 0: target_new = target
-        if target < 0 and target_new > 0: target_new = target
 
         if (target == 0):  # Not moving
-            target_new = 0
-            return target_new
+            control_signal = 0
+            return control_signal
+
+        saturation = 0.2
+        if control_signal >= saturation:
+            control_signal = saturation
+        elif control_signal <= -saturation:
+            control_signal = -saturation
 
         wheel_pid['time_prev'] = wheel_pid['time_curr']
-        return target_new
+        return control_signal
 
     def wheels_update(self):
         self.wheel1_angular_vel_target = self.tangentvel_2_angularvel(self.wheel1_tangent_vel_target)
@@ -308,36 +312,18 @@ class ControlMotors:
         self.wheel4_angular_vel_target_pub.publish(self.wheel4_angular_vel_target)
 
         if self.pid_on:
-            self.wheel1_angular_vel_target = self.pid_control(self.wheel1_pid, self.wheel1_angular_vel_target,
+            wheel1_motor_cmd = self.pid_control(self.wheel1_pid, self.wheel1_angular_vel_target,
                                                               self.wheel1_angular_vel_enc)
-            self.wheel2_angular_vel_target = self.pid_control(self.wheel2_pid, self.wheel2_angular_vel_target,
+            wheel2_motor_cmd = self.pid_control(self.wheel2_pid, self.wheel2_angular_vel_target,
                                                               self.wheel2_angular_vel_enc)
-            self.wheel3_angular_vel_target = self.pid_control(self.wheel3_pid, self.wheel3_angular_vel_target,
+            wheel3_motor_cmd = self.pid_control(self.wheel3_pid, self.wheel3_angular_vel_target,
                                                               self.wheel3_angular_vel_enc)
-            self.wheel4_angular_vel_target = self.pid_control(self.wheel4_pid, self.wheel4_angular_vel_target,
+            wheel4_motor_cmd = self.pid_control(self.wheel4_pid, self.wheel4_angular_vel_target,
                                                               self.wheel4_angular_vel_enc)
-
-        # Compute motor command
-        wheel1_motor_cmd = self.angularvel_2_motorcmd(self.wheel1_angular_vel_target)
-        wheel2_motor_cmd = self.angularvel_2_motorcmd(self.wheel2_angular_vel_target)
-        wheel3_motor_cmd = self.angularvel_2_motorcmd(self.wheel3_angular_vel_target)
-        wheel4_motor_cmd = self.angularvel_2_motorcmd(self.wheel4_angular_vel_target)
 
         print("PWM1: {}, PWM2: {}, PWM3: {}, PWM4: {}".format(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd,
                                                               wheel4_motor_cmd))
         self.set_speed(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd, wheel4_motor_cmd)
-
-    def angularvel_2_motorcmd(self, angular_vel_target):
-        if angular_vel_target != 0:
-            cmd = angular_vel_target/self.motor_max_angular_vel
-            if -1 > cmd:
-                return -1
-            elif 1 < cmd:
-                return 1
-            else:
-                return cmd
-        else:
-            return 0
 
     def spin(self):
         rospy.loginfo("Start motors_controller")
