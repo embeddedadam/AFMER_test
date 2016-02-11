@@ -44,17 +44,18 @@ class LLC_motor:
         }
 
         self.set_pins()
+        self.wake()
 
     def set_pins(self):
         self.pins["DIR"] = DigitalOutputDevice(self.pins["DIR"], active_high=False)
         self.pins["SLP"] = MCP18.get_pin(self.pins["SLP"])
-        self.pins["FLT"] = MCP18.get_pin(self.pins["FLT"])
+        #self.pins["FLT"] = MCP18.get_pin(self.pins["FLT"])
         #self.pins["CS"] = MCP3208(self.pins["CS"])
-        self.pins["PWR"] = MCP18.get_pin(self.pins["PWR"])
+        #self.pins["PWR"] = MCP18.get_pin(self.pins["PWR"])
 
         self.pins["SLP"].pull = digitalio.Pull.UP
         self.pins["SLP"].switch_to_output(False)
-        self.pins["PWR"].switch_to_input()
+        #self.pins["PWR"].switch_to_input()
 
     def sleep(self):
         self.pins["SLP"].switch_to_output(False)
@@ -63,14 +64,13 @@ class LLC_motor:
         self.pins["SLP"].switch_to_output(True)
 
     def is_active(self):
-        return self.pins["PWR"].value
+        pass        
+#return self.pins["PWR"].value
 
     def forward(self):
-        print("forward")
         self.pins["DIR"].on()
 
     def backward(self):
-        print("backward")
         self.pins["DIR"].off()
 
     def coast(self):
@@ -87,7 +87,7 @@ class ControlMotors:
         self.pi = pigpio.pi()
         self.pwm = wavePWM.PWM(self.pi)
         self.pwm.set_frequency(12500)
-        self.pid_on = True
+        self.pid_on = False
 
         self.motor1 = LLC_motor(name="motor1")
         self.motor2 = LLC_motor(name="motor2")
@@ -95,12 +95,15 @@ class ControlMotors:
         self.motor4 = LLC_motor(name="motor4")
 
         self.rate = rospy.get_param("~rate", 10)
-        self.Kp = rospy.get_param('~Kp', 0.05)
+        self.Kp = rospy.get_param('~Kp', 20.0)
         self.Ki = rospy.get_param('~Ki', 0.0)
-        self.Kd = rospy.get_param('~Kd', 0.0)
+        self.Kd = rospy.get_param('~Kd', 0.0)#2
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
         self.motor_max_angular_vel = rospy.get_param('~motor_max_angular_vel', 87.0)
         self.motor_min_angular_vel = rospy.get_param('~motor_min_angular_vel', -87.0)
+        self.last_control_signal = 0
+        self.slew_rate = 0.04
+        self.saturation = 0.7
 
         # Read in encoders for PID control
         self.wheel1_angular_vel_enc_sub = rospy.Subscriber('wheel_1_vel', Float32, self.wheel1_angular_vel_enc_callback)
@@ -124,10 +127,10 @@ class ControlMotors:
         self.wheel3_angular_vel_target_pub = rospy.Publisher("wheel3_calc_angular_vel", Float32, queue_size=10)
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel4_calc_angular_vel", Float32, queue_size=10)
         # Tangential velocity target
-        self.wheel1_tangent_vel_target = 0
-        self.wheel2_tangent_vel_target = 0
-        self.wheel3_tangent_vel_target = 0
-        self.wheel4_tangent_vel_target = 0.5
+        self.wheel1_tangent_vel_target = -0.4
+        self.wheel2_tangent_vel_target = -0.4
+        self.wheel3_tangent_vel_target = 0.0
+        self.wheel4_tangent_vel_target = -0.4
 
         # Angular velocity target
         self.wheel1_angular_vel_target = 0
@@ -188,16 +191,17 @@ class ControlMotors:
     def set_speed(self, pwm_width1, pwm_width2, pwm_width3, pwm_width4):
         # motor1
         if pwm_width1 != self.pwm1_old:
-            if not self.motor1.is_active():
-                self.motor1.wake()
-                if not self.motor1.is_active():
-                    ValueError("Sterownik nie chce wstac")
+            #self.motor1.wake()
             if (-1 <= pwm_width1 <= 1):
                 if pwm_width1 >= 0:
-                    self.motor1.forward()
-                else:
+                    if self.pwm1_old <= 0:
+                        self.motor1.forward()
+                    self.pwm1_old = pwm_width1
+                elif pwm_width1 < 0:
+                    if self.pwm1_old >= 0:
+                        self.motor1.backward()
+                    self.pwm1_old = pwm_width1
                     pwm_width1 = -1.0 * pwm_width1
-                    self.motor1.backward()
                 self.pwm.set_pulse_length_in_fraction(self.motor1.pins["PWM"], pwm_width1)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
@@ -206,64 +210,56 @@ class ControlMotors:
 
         # motor2
         if pwm_width2 != self.pwm2_old:
-            if not self.motor2.is_active():
-                self.motor2.wake()
-                if not self.motor2.is_active():
-                    ValueError("Sterownik nie chce wstac")
+            #self.motor2.wake()
             if (-1 <= pwm_width2 <= 1):
                 if pwm_width2 >= 0:
-                    self.motor2.forward()
-                else:
+                    if self.pwm2_old <= 0:
+                        self.motor2.forward()
+                    self.pwm2_old = pwm_width2
+                elif pwm_width2 < 0:
+                    if self.pwm2_old >= 0:
+                        self.motor2.backward()
+                    self.pwm2_old = pwm_width2
                     pwm_width2 = -1.0 * pwm_width2
-                    self.motor2.backward()
                 self.pwm.set_pulse_length_in_fraction(self.motor2.pins["PWM"], pwm_width2)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        elif not self.motor2.is_active():
-            pass
-              #print("blad sterownika2")
 
         # motor3
         if pwm_width3 != self.pwm3_old:
-            if not self.motor3.is_active():
-                self.motor3.wake()
-                if not self.motor3.is_active():
-                    ValueError("Sterownik nie chce wstac")
+            #self.motor3.wake()
             if (-1 <= pwm_width3 <= 1):
                 if pwm_width3 >= 0:
-                    self.motor3.forward()
-                else:
+                    if self.pwm3_old <= 0:
+                        self.motor3.forward()
+                    self.pwm3_old = pwm_width3
+                elif pwm_width3 < 0:
+                    if self.pwm3_old >= 0:
+                        self.motor3.backward()
+                    self.pwm3_old = pwm_width3
                     pwm_width3 = -1.0 * pwm_width3
-                    self.motor3.backward()
                 self.pwm.set_pulse_length_in_fraction(self.motor3.pins["PWM"], pwm_width3)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
-            pass
 
         # motor4
         if pwm_width4 != self.pwm4_old:
-            if not self.motor4.is_active():
-                self.motor4.wake()
-                if not self.motor4.is_active():
-                    ValueError("Sterownik nie chce wstac")
+            #self.motor4.wake()
             if (-1 <= pwm_width4 <= 1):
                 if pwm_width4 >= 0:
-                    self.motor4.forward()
-                else:
+                    if self.pwm4_old <= 0:
+                        self.motor4.forward()
+                    self.pwm4_old = pwm_width4
+                elif pwm_width4 < 0:
+                    if self.pwm4_old >= 0:
+                        self.motor4.backward()
+                    self.pwm4_old = pwm_width4
                     pwm_width4 = -1.0 * pwm_width4
-                    self.motor4.backward()
                 self.pwm.set_pulse_length_in_fraction(self.motor4.pins["PWM"], pwm_width4)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
-            pass
 
         self.pwm.update()
-        self.pwm1_old = pwm_width1
-        self.pwm2_old = pwm_width2
-        self.pwm3_old = pwm_width3
-        self.pwm4_old = pwm_width4
 
     def pid_control(self, wheel_pid, target, state):
         if len(wheel_pid) == 0:
@@ -289,16 +285,26 @@ class ControlMotors:
             control_signal = 0
             return control_signal
 
-        saturation = 0.2
-        if control_signal >= saturation:
-            control_signal = saturation
-        elif control_signal <= -saturation:
-            control_signal = -saturation
+        if abs(control_signal - self.last_control_signal) > self.slew_rate:
+            if control_signal > self.last_control_signal:
+                control_signal = self.last_control_signal + self.slew_rate
+            elif control_signal < self.last_control_signal:
+                control_signal = self.last_control_signal - self.slew_rate
+
+        if control_signal >= self.saturation:
+            control_signal = self.saturation
+        elif control_signal <= -self.saturation:
+            control_signal = -self.saturation
 
         wheel_pid['time_prev'] = wheel_pid['time_curr']
+        self.last_control_signal = control_signal
         return control_signal
 
     def wheels_update(self):
+        wheel1_motor_cmd = 0.2
+        wheel2_motor_cmd = 0.2
+        wheel3_motor_cmd = 0.0
+        wheel4_motor_cmd = 0.2
         self.wheel1_angular_vel_target = self.tangentvel_2_angularvel(self.wheel1_tangent_vel_target)
         self.wheel1_angular_vel_target_pub.publish(self.wheel1_angular_vel_target)
 
@@ -311,6 +317,7 @@ class ControlMotors:
         self.wheel4_angular_vel_target = self.tangentvel_2_angularvel(self.wheel4_tangent_vel_target)
         self.wheel4_angular_vel_target_pub.publish(self.wheel4_angular_vel_target)
 
+        print("UCHYB: {}".format(self.wheel2_angular_vel_target - self.wheel2_angular_vel_enc))
         if self.pid_on:
             wheel1_motor_cmd = self.pid_control(self.wheel1_pid, self.wheel1_angular_vel_target,
                                                               self.wheel1_angular_vel_enc)

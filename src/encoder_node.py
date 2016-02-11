@@ -56,9 +56,9 @@ class LLC_encoder:
 class WheelsEncodersPublishers:
     def __init__(self):
         rospy.init_node("encoders_node")
-        self.enc1 = LLC_encoder(26, 21)
+        self.enc1 = LLC_encoder(21, 26) #lustrzane odbicie/podmiana pinow
         self.enc2 = LLC_encoder(13, 16)
-        self.enc3 = LLC_encoder(25, 5)
+        self.enc3 = LLC_encoder(5, 25) #lustrzane odbicie/podmiana pinow
         self.enc4 = LLC_encoder(18, 27)
 
         self.wheel_1_vel_publisher = rospy.Publisher("wheel_1_vel", Float32, queue_size=10)
@@ -74,6 +74,7 @@ class WheelsEncodersPublishers:
         self.enc2_data = self.enc2.read_rotations()
         self.enc3_data = self.enc3.read_rotations()
         self.enc4_data = self.enc4.read_rotations()
+        self.buffer_4 = 0
 
     def enc_2_rads(self, enc_cms):
         prop_revolution = (enc_cms) / (2.0*math.pi*self.R)
@@ -94,10 +95,10 @@ class WheelsEncodersPublishers:
         wheel_3_angular_vel = enc3_delta * 2 * math.pi / dt
         wheel_4_angular_vel = enc4_delta * 2 * math.pi / dt
 
+        self.wheel_4_vel_publisher.publish(wheel_4_angular_vel)
         self.wheel_1_vel_publisher.publish(wheel_1_angular_vel)
         self.wheel_2_vel_publisher.publish(wheel_2_angular_vel)
         self.wheel_3_vel_publisher.publish(wheel_3_angular_vel)
-        self.wheel_4_vel_publisher.publish(wheel_4_angular_vel)
 
         self.enc1_data = self.enc1.read_rotations()
         self.enc2_data = self.enc2.read_rotations()
