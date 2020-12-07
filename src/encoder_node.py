@@ -29,7 +29,7 @@ class LLC_encoder:
         self.aLastState = False
         self.bLastState = False
         self.counter = 0
-        self.aLastState = self.a.value
+        self.aLastState = GPIO.input(self.a)
 
     def read_rotations(self):
         return self.counter / self.enc_impulses_per_wheel_rot
