@@ -1,0 +1,344 @@
+<?xml version="1.0"?>
+<robot name="AFMER">
+
+    <gazebo>
+        <static>false</static>
+      
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/afmer</robotNamespace>
+            <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+            <legacyModeNS>true</legacyModeNS>
+        </plugin>
+    </gazebo>
+
+    <link name="dummy"></link>
+    
+    <material name="orange">
+        <color rgba="1.0 0.5 0.2 1" />
+    </material>
+    <material name="gray">
+        <color rgba="0.2 0.2 0.2 1" />
+    </material>
+    
+    <link name="imu_link">
+        <visual>
+          <origin xyz="0 0 0" />
+          <geometry>
+            <box size="0.06 0.04 0.02" />
+          </geometry>
+          <material name="orange" />
+        </visual>
+    </link>
+    
+    <link name="laser">
+        <visual>
+          <origin xyz="0 0 0" />
+          <geometry>
+            <cylinder length="0.03" radius="0.03" />
+          </geometry>
+          <material name="gray" />
+        </visual>
+    </link>
+
+    <link name="base_link">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.01517 -0.0125 0.00545" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.01517 -0.0125 0.00545" />
+            <material name="white">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <inertial>
+            <mass value="15.3"/>
+            <inertia ixx="0" ixy="0.23716689375" ixz="0.1452742395" iyy="0" iyz="0.15856722375" izz="0"/>
+        </inertial>
+    </link>
+
+    <link name="wheel_1">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.0414237 -0.029315 0.0120757" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel1.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel1.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.0414237 -0.029315 0.0120757" />
+            <material name="black">
+                <color rgba="0 0 0 1" />
+            </material>
+        </visual>
+        <inertial>
+            <mass value="0.785"/>
+            <inertia ixx="0" ixy="0.001687" ixz="0.001687" iyy="0" iyz="0.003179" izz="0"/>
+        </inertial>
+    </link>
+
+    <link name="wheel_2">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.0414237 0.004315 0.0120757" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel2.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel2.dae" scale="0.001 0.001 0.001" />
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.0414237 0.004315 0.0120757" />
+            <material name="black" />
+        </visual>
+        <inertial>
+            <mass value="0.785"/>
+            <inertia ixx="0" ixy="0.001687" ixz="0.001687" iyy="0" iyz="0.003179" izz="0"/>
+            </inertial>
+    </link>
+
+    <link name="wheel_3">
+        <collision>
+            <origin rpy="0 0 0" xyz="0.0110837 -0.029315 0.0120757" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel3.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel3.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0.0110837 -0.029315 0.0120757" />
+            <material name="black" />
+        </visual>
+        <inertial>
+            <mass value="0.785"/>
+            <inertia ixx="0" ixy="0.001687" ixz="0.001687" iyy="0" iyz="0.003179" izz="0"/>
+            </inertial>
+    </link>
+
+    <link name="wheel_4">
+        <collision>
+            <origin rpy="0 0 0" xyz="0.0110837 0.004315 0.0120757" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel4.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel4.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0.0110837 0.004315 0.0120757" />
+            <material name="black" />
+        </visual>
+        <inertial>
+            <mass value="0.785"/>
+            <inertia ixx="0" ixy="0.001687" ixz="0.001687" iyy="0" iyz="0.003179" izz="0"/>
+            </inertial>
+    </link>
+
+    <link name="gear_1">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.02458 -0.029315 0.00545" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox1.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox1.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.02458 -0.029315 0.00545" />
+            <color rgba="1 0 1 1" />
+        </visual>
+        <inertial>
+            <mass value="1.0"/>
+            <inertia ixx="0" ixy="0.0057826875" ixz="0.000888" iyy="0" iyz="0.0060706875" izz="0"/>
+        </inertial>
+    </link>
+
+    <link name="gear_2">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.02458 0.004315 0.00545" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox2.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox2.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.02458 0.004315 0.00545" />
+            <color rgba="1 0 1 1" />
+        </visual>
+        <inertial>
+            <mass value="1.0"/>
+            <inertia ixx="0" ixy="0.0057826875" ixz="0.000888" iyy="0" iyz="0.0060706875" izz="0"/>
+            </inertial>
+    </link>
+
+    <link name="gear_3">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.00576 -0.029315 0.00545" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox3.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox3.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.00576 -0.029315 0.00545" />
+            <color rgba="1 0 1 1" />
+        </visual>
+        <inertial>
+            <mass value="1.0"/>
+            <inertia ixx="0" ixy="0.0057826875" ixz="0.000888" iyy="0" iyz="0.0060706875" izz="0"/>
+            </inertial>
+    </link>
+
+    <link name="gear_4">
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.00576 0.004315 0.00545" />
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox4.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+        <visual>
+            <geometry>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox4.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="-0.00576 0.004315 0.00545" />
+            <color rgba="1 0 1 1" />
+        </visual>
+        <inertial>
+            <mass value="1.0"/>
+            <inertia ixx="0" ixy="0.0057826875" ixz="0.000888" iyy="0" iyz="0.0060706875" izz="0"/>
+        </inertial>
+    </link>
+
+    <joint name="dummy_joint" type="fixed">
+        <parent link="dummy"/>
+        <child link="base_link"/>
+    </joint>
+
+    <joint name="gear1_to_wheel1" type="continuous">
+        <parent link="gear_1" />
+        <child link="wheel_1" />
+        <origin xyz="0.0168437 0 -0.0066257" />
+        <axis xyz="0 1 0"/>
+        <limit effort="10" velocity="1"/>
+    </joint>
+
+    <joint name="gear2_to_wheel2" type="continuous">
+        <parent link="gear_2" />
+        <child link="wheel_2" />
+        <origin xyz="0.0168437 0 -0.0066257" />
+        <axis xyz="0 1 0"/>
+        <limit effort="10" velocity="1"/>
+    </joint>
+
+    <joint name="gear3_to_wheel3" type="continuous">
+        <parent link="gear_3" />
+        <child link="wheel_3" />
+        <origin xyz="-0.0168437 0 -0.0066257" />
+        <axis xyz="0 1 0"/>
+        <limit effort="10" velocity="1" />
+    </joint>
+
+    <joint name="gear4_to_wheel4" type="continuous">
+        <parent link="gear_4" />
+        <child link="wheel_4" />
+        <origin xyz="-0.0168437 0 -0.0066257" />
+        <axis xyz="0 1 0"/>
+        <limit effort="10" velocity="1" />
+    </joint>
+
+    <joint name="base_to_gear1" type="fixed">
+        <parent link="base_link" />
+        <child link="gear_1" />
+        <origin xyz="0.00941 0.016815 0" />
+    </joint>
+
+    <joint name="base_to_gear2" type="fixed">
+        <parent link="base_link" />
+        <child link="gear_2" />
+        <origin xyz="0.00941 -0.016815 0" />
+    </joint>
+
+    <joint name="base_to_gear3" type="fixed">
+        <parent link="base_link" />
+        <child link="gear_3" />
+        <origin xyz="-0.00941 0.016815 0" />
+    </joint>
+
+    <joint name="base_to_gear4" type="fixed">
+        <parent link="base_link" />
+        <child link="gear_4" />
+        <origin xyz="-0.00941 -0.016815 0" />
+    </joint>
+
+    <joint name="laser_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="laser" />
+        <origin rpy="0 0 3.1415926" xyz="0 0 0.05" />
+    </joint>
+    
+    <joint name="imu_link_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="imu_link" />
+        <origin xyz="0 0 0" />
+    </joint>
+
+    <transmission name="tran1">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="gear1_to_wheel1">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor1">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+    
+    <transmission name="tran2">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="gear2_to_wheel2">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor2">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+    
+    <transmission name="tran3">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="gear3_to_wheel3">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor3">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+    
+    <transmission name="tran4">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="gear4_to_wheel4">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor4">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+
+</robot>

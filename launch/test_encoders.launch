@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="AFMER_description" type="encoder_node.py" name="encoders_node" output="screen"/>   
+  <node pkg="AFMER_description" type="motor_node.py" name="motors_controller" output="screen"/>   
+ 
+</launch>
