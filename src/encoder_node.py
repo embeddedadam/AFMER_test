@@ -18,10 +18,8 @@ class LLC_encoder:
         GPIO.setup(self.a, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(self.b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        GPIO.add_event_detect(self.a, GPIO.RISING, callback=self.count, bouncetime=300)
-        GPIO.add_event_detect(self.a, GPIO.FALLING, callback=self.count, bouncetime=300)
-        GPIO.add_event_detect(self.b, GPIO.RISING, callback=self.count, bouncetime=300)
-        GPIO.add_event_detect(self.b, GPIO.FALLING, callback=self.count, bouncetime=300)
+        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=300)
+        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=300)
 
         self.gear_ratio = 3.6
         self.enc_impulses_per_motor_rot = 20
@@ -40,16 +38,16 @@ class LLC_encoder:
         self.counter = 0
 
     def count(self):
-        self.aState = self.a.value
-        self.bState = self.b.value
+        self.aState = GPIO.input(self.a)
+        self.bState = GPIO.input(self.b)
         if self.aLastState != self.aState:
-            if self.b.value != self.aState:
+            if GPIO.input(self.b) != self.aState:
                 self.counter -= 1
             else:
                 self.counter += 1
 
         if self.bLastState != self.bState:
-            if self.a.value == self.bState:
+            if GPIO.INPUT(self.a) == self.bState:
                 self.counter -= 1
             else:
                 self.counter += 1
