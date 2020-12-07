@@ -4,19 +4,24 @@ import roslib
 import math 
 import numpy
 import time
-import gpiozero
+import RPi.GPIO as GPIO
+import signal
 
 # Messages
 from std_msgs.msg import Float32
 
 class LLC_encoder:
     def __init__(self, pin_a, pin_b):
-        self.a = gpiozero.DigitalInputDevice(pin_a)
-        self.b = gpiozero.DigitalInputDevice(pin_b)
-        self.a.when_activated = self.count
-        self.a.when_deactivated = self.count
-        self.b.when_activated = self.count
-        self.b.when_deactivated = self.count	
+        GPIO.setmode(GPIO.BCM)
+        self.a = pin_a
+        self.b = pin_b
+        GPIO.setup(self.a, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+        GPIO.add_event_detect(self.a, GPIO.RISING, callback=self.count, bouncetime=300)
+        GPIO.add_event_detect(self.a, GPIO.FALLING, callback=self.count, bouncetime=300)
+        GPIO.add_event_detect(self.b, GPIO.RISING, callback=self.count, bouncetime=300)
+        GPIO.add_event_detect(self.b, GPIO.FALLING, callback=self.count, bouncetime=300)
 
         self.gear_ratio = 3.6
         self.enc_impulses_per_motor_rot = 20
