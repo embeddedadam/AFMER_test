@@ -84,11 +84,6 @@ class WheelsEncodersPublishers:
         return rads
 
     def update(self):
-        self.enc1.count()
-        self.enc2.count()
-        self.enc3.count()
-        self.enc4.count()
-
         time_curr_update = rospy.Time.now()
         dt = (time_curr_update - self.time_prev_update).to_sec()
 
