@@ -59,10 +59,10 @@ class LLC_encoder:
 class WheelsEncodersPublishers:
     def __init__(self):
         rospy.init_node("encoders_node")
-        self.enc1 = LLC_encoder(25, 29)
-        self.enc2 = LLC_encoder(23, 27)
-        self.enc3 = LLC_encoder(6, 21)
-        self.enc4 = LLC_encoder(1, 2)
+        self.enc1 = LLC_encoder(26, 21)
+        self.enc2 = LLC_encoder(13, 16)
+        self.enc3 = LLC_encoder(25, 5)
+        self.enc4 = LLC_encoder(18, 27)
 
         self.wheel_1_vel_publisher = rospy.Publisher("wheel_1_vel", Float32, queue_size=10)
         self.wheel_2_vel_publisher = rospy.Publisher("wheel_2_vel", Float32, queue_size=10)
