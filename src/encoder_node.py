@@ -11,7 +11,6 @@ from std_msgs.msg import Float32
 
 class LLC_encoder:
     def __init__(self, pin_a, pin_b):
-        wiringpi.wiringPiSetupGpio()
         self.a = pin_a
         self.b = pin_b
         wiringpi.pinMode(self.a, wiringpi.GPIO.INPUT)
@@ -58,6 +57,7 @@ class LLC_encoder:
 
 class WheelsEncodersPublishers:
     def __init__(self):
+        wiringpi.wiringPiSetupGpio()
         rospy.init_node("encoders_node")
         self.enc1 = LLC_encoder(26, 21)
         self.enc2 = LLC_encoder(13, 16)
