@@ -4,22 +4,24 @@ import roslib
 import math 
 import numpy
 import time
-import RPi.GPIO as GPIO
-import signal
+import wiringpi
 
 # Messages
 from std_msgs.msg import Float32
 
 class LLC_encoder:
     def __init__(self, pin_a, pin_b):
-        GPIO.setmode(GPIO.BCM)
+        wiringpi.wiringPiSetupGpio()
         self.a = pin_a
         self.b = pin_b
-        GPIO.setup(self.a, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(self.b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        wiringpi.pinMode(self.a, wiringpi.GPIO.INPUT)
+        wiringpi.pinMode(self.b, wiringpi.GPIO.INPUT)
 
-        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=300)
-        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=300)
+        wiringpi.pullUpInControl(self.a, wiringpi.GPIO.PUD_UP)
+        wiringpi.pullUpInControl(self.b, wiringpi.GPIO.PUD_UP)
+
+        wiringpi.wiringPiISR(self.a, wiringpi.GPIO.INT_EDGE_BOTH, self.count)
+        wiringpi.wiringPiISR(self.b, wiringpi.GPIO.INT_EDGE_BOTH, self.count)
 
         self.gear_ratio = 3.6
         self.enc_impulses_per_motor_rot = 20
@@ -29,7 +31,7 @@ class LLC_encoder:
         self.aLastState = False
         self.bLastState = False
         self.counter = 0
-        self.aLastState = GPIO.input(self.a)
+        self.aLastState = wiringpi.digitalRead(self.a)
 
     def read_rotations(self):
         return self.counter / self.enc_impulses_per_wheel_rot
@@ -38,16 +40,16 @@ class LLC_encoder:
         self.counter = 0
 
     def count(self):
-        self.aState = GPIO.input(self.a)
-        self.bState = GPIO.input(self.b)
+        self.aState = wiringpi.digitalRead(self.a)
+        self.bState = wiringpi.digitalRead(self.b)
         if self.aLastState != self.aState:
-            if GPIO.input(self.b) != self.aState:
+            if wiringpi.digitalRead(self.b) != self.aState:
                 self.counter -= 1
             else:
                 self.counter += 1
 
         if self.bLastState != self.bState:
-            if GPIO.INPUT(self.a) == self.bState:
+            if wiringpi.digitalRead(self.a) == self.bState:
                 self.counter -= 1
             else:
                 self.counter += 1
@@ -57,10 +59,10 @@ class LLC_encoder:
 class WheelsEncodersPublishers:
     def __init__(self):
         rospy.init_node("encoders_node")
-        self.enc1 = LLC_encoder(26, 21)
-        self.enc2 = LLC_encoder(13, 16)
-        self.enc3 = LLC_encoder(25, 5)
-        self.enc4 = LLC_encoder(18, 27)
+        self.enc1 = LLC_encoder(25, 29)
+        self.enc2 = LLC_encoder(23, 27)
+        self.enc3 = LLC_encoder(6, 21)
+        self.enc4 = LLC_encoder(1, 2)
 
         self.wheel_1_vel_publisher = rospy.Publisher("wheel_1_vel", Float32, queue_size=10)
         self.wheel_2_vel_publisher = rospy.Publisher("wheel_2_vel", Float32, queue_size=10)
