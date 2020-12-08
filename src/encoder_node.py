@@ -16,8 +16,8 @@ class LLC_encoder:
         wiringpi.pinMode(self.a, wiringpi.GPIO.INPUT)
         wiringpi.pinMode(self.b, wiringpi.GPIO.INPUT)
 
-        wiringpi.pullUpDnControl(self.a, wiringpi.GPIO.PUD_UP)
-        wiringpi.pullUpDnControl(self.b, wiringpi.GPIO.PUD_UP)
+        wiringpi.pullUpDnControl(self.a, wiringpi.GPIO.PUD_DOWN)
+        wiringpi.pullUpDnControl(self.b, wiringpi.GPIO.PUD_DOWN)
 
         wiringpi.wiringPiISR(self.a, wiringpi.GPIO.INT_EDGE_BOTH, self.count)
         wiringpi.wiringPiISR(self.b, wiringpi.GPIO.INT_EDGE_BOTH, self.count)
