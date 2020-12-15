@@ -4,11 +4,8 @@ import roslib
 import math 
 import numpy
 import time
-<<<<<<< HEAD
 import wiringpi
-=======
 import RPi.GPIO as GPIO
->>>>>>> test/loop
 
 # Messages
 from std_msgs.msg import Float32

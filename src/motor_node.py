@@ -84,7 +84,7 @@ class ControlMotors:
         self.rate = rospy.get_param("~rate", 10)
         self.Kp = rospy.get_param('~Kp', 20.0)
         self.Ki = rospy.get_param('~Ki', 0.0)
-        self.Kd = rospy.get_param('~Kd', 0.0)#2
+        self.Kd = rospy.get_param('~Kd', 0.0)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
@@ -96,6 +96,12 @@ class ControlMotors:
         self.wheel2_angular_vel_enc_sub = rospy.Subscriber('wheel_2_vel', Float32, self.wheel2_angular_vel_enc_callback)
         self.wheel3_angular_vel_enc_sub = rospy.Subscriber('wheel_3_vel', Float32, self.wheel3_angular_vel_enc_callback)
         self.wheel4_angular_vel_enc_sub = rospy.Subscriber('wheel_4_vel', Float32, self.wheel4_angular_vel_enc_callback)
+
+        # Read errors
+        self.wheel1_error = rospy.Publisher('wheel1_error', Float32, queue_size=10)
+        self.wheel2_error = rospy.Publisher('wheel2_error', Float32, queue_size=10)
+        self.wheel3_error = rospy.Publisher('wheel3_error', Float32, queue_size=10)
+        self.wheel4_error = rospy.Publisher('wheel4_error', Float32, queue_size=10)
 
         # Read in tangential velocity targets
         self.wheel1_tangent_vel_target_sub = rospy.Subscriber('wheel1_tangent_vel_target', Float32,
@@ -181,7 +187,7 @@ class ControlMotors:
             self.motor1.wake()
             if -1 < pwm_width1 < 1:
                 if pwm_width1 >= 0:
-                        self.motor1.forward()
+                    self.motor1.forward()
                 else:
                     self.motor1.backward()
                     pwm_width1 = -1.0 * pwm_width1
@@ -252,10 +258,10 @@ class ControlMotors:
 
         wheel_pid['error_prev'] = wheel_pid['error_curr']
         control_signal = (
-                    self.Kp * wheel_pid['error_curr'] + self.Ki * wheel_pid['integral'] + self.Kd * wheel_pid[
-                'derivative'])
+                self.Kp * wheel_pid['error_curr'] + self.Ki * wheel_pid['integral'] + self.Kd * wheel_pid[
+            'derivative'])
 
-        if (target == 0):  # Not moving
+        if target == 0:  # Not moving
             control_signal = 0
             return control_signal
 
@@ -287,19 +293,24 @@ class ControlMotors:
         self.wheel4_angular_vel_target = self.tangentvel_2_angularvel(self.wheel4_tangent_vel_target)
         self.wheel4_angular_vel_target_pub.publish(self.wheel4_angular_vel_target)
 
-        print("UCHYB: {}".format(self.wheel2_angular_vel_target - self.wheel2_angular_vel_enc))
+        self.wheel1_error.publish(self.wheel1_angular_vel_target-self.wheel1_angular_vel_enc)
+        self.wheel2_error.publish(self.wheel2_angular_vel_target-self.wheel2_angular_vel_enc)
+        self.wheel3_error.publish(self.wheel3_angular_vel_target-self.wheel3_angular_vel_enc)
+        self.wheel4_error.publish(self.wheel4_angular_vel_target-self.wheel4_angular_vel_enc)
+
         if self.pid_on:
             wheel1_motor_cmd = self.pid_control(self.wheel1_pid, self.wheel1_angular_vel_target,
-                                                              self.wheel1_angular_vel_enc)
+                                                self.wheel1_angular_vel_enc)
             wheel2_motor_cmd = self.pid_control(self.wheel2_pid, self.wheel2_angular_vel_target,
-                                                              self.wheel2_angular_vel_enc)
+                                                self.wheel2_angular_vel_enc)
             wheel3_motor_cmd = self.pid_control(self.wheel3_pid, self.wheel3_angular_vel_target,
-                                                              self.wheel3_angular_vel_enc)
+                                                self.wheel3_angular_vel_enc)
             wheel4_motor_cmd = self.pid_control(self.wheel4_pid, self.wheel4_angular_vel_target,
-                                                              self.wheel4_angular_vel_enc)
+                                                self.wheel4_angular_vel_enc)
 
         print("PWM1: {}, PWM2: {}, PWM3: {}, PWM4: {}".format(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd,
                                                               wheel4_motor_cmd))
+
         self.set_speed(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd, wheel4_motor_cmd)
 
     def spin(self):
@@ -327,4 +338,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main();
+    main()
