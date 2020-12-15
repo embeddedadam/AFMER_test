@@ -48,22 +48,14 @@ class LLC_motor:
     def set_pins(self):
         self.pins["DIR"] = DigitalOutputDevice(self.pins["DIR"], active_high=False)
         self.pins["SLP"] = MCP18.get_pin(self.pins["SLP"])
-        self.pins["FLT"] = MCP18.get_pin(self.pins["FLT"])
-        #self.pins["CS"] = MCP3208(self.pins["CS"])
-        self.pins["PWR"] = MCP18.get_pin(self.pins["PWR"])
-
         self.pins["SLP"].pull = digitalio.Pull.UP
         self.pins["SLP"].switch_to_output(False)
-        self.pins["PWR"].switch_to_input()
 
     def sleep(self):
         self.pins["SLP"].switch_to_output(False)
 
     def wake(self):
         self.pins["SLP"].switch_to_output(True)
-
-    def is_active(self):
-        return self.pins["PWR"].value
 
     def forward(self):
         self.pins["DIR"].on
@@ -73,10 +65,6 @@ class LLC_motor:
 
     def coast(self):
         self.sleep()
-
-    def brake(self):
-        self.pwm.set_pulse_length_in_fraction(self.pins["PWM"], 0)
-        self.pwm.update()
 
 
 class ControlMotors:
@@ -97,8 +85,6 @@ class ControlMotors:
         self.Ki = rospy.get_param('~Ki', 1.0)
         self.Kd = rospy.get_param('~Kd', 1.0)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
-        self.motor_max_angular_vel = rospy.get_param('~motor_max_angular_vel', 87.0)
-        self.motor_min_angular_vel = rospy.get_param('~motor_min_angular_vel', -87.0)
 
         # Read in encoders for PID control
         self.wheel1_angular_vel_enc_sub = rospy.Subscriber('wheel_1_vel', Float32, self.wheel1_angular_vel_enc_callback)
@@ -121,9 +107,10 @@ class ControlMotors:
         self.wheel2_angular_vel_target_pub = rospy.Publisher("wheel2_calc_angular_vel", Float32, queue_size=10)
         self.wheel3_angular_vel_target_pub = rospy.Publisher("wheel3_calc_angular_vel", Float32, queue_size=10)
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel4_calc_angular_vel", Float32, queue_size=10)
+
         # Tangential velocity target
         self.wheel1_tangent_vel_target = 0
-        self.wheel2_tangent_vel_target = 0.2
+        self.wheel2_tangent_vel_target = 0
         self.wheel3_tangent_vel_target = 0
         self.wheel4_tangent_vel_target = 0
 
@@ -186,11 +173,8 @@ class ControlMotors:
     def set_speed(self, pwm_width1, pwm_width2, pwm_width3, pwm_width4):
         # motor1
         if pwm_width1 != self.pwm1_old:
-            if not self.motor1.is_active():
-                self.motor1.wake()
-                if not self.motor1.is_active():
-                    ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width1 < 1):
+            self.motor1.wake()
+            if -1 < pwm_width1 < 1:
                 if pwm_width1 >= 0:
                     self.motor1.forward()
                 else:
@@ -199,16 +183,11 @@ class ControlMotors:
                 self.pwm.set_pulse_length_in_fraction(self.motor1.pins["PWM"], pwm_width1)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
-            pass
 
         # motor2
         if pwm_width2 != self.pwm2_old:
-            if not self.motor2.is_active():
-                self.motor2.wake()
-                if not self.motor2.is_active():
-                    ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width2 < 1):
+            self.motor2.wake()
+            if -1 < pwm_width2 < 1:
                 if pwm_width2 >= 0:
                     self.motor2.forward()
                 else:
@@ -217,16 +196,11 @@ class ControlMotors:
                 self.pwm.set_pulse_length_in_fraction(self.motor2.pins["PWM"], pwm_width2)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
-            pass
 
         # motor3
         if pwm_width3 != self.pwm3_old:
-            if not self.motor3.is_active():
-                self.motor3.wake()
-                if not self.motor3.is_active():
-                    ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width3 < 1):
+            self.motor3.wake()
+            if -1 < pwm_width3 < 1:
                 if pwm_width3 >= 0:
                     self.motor3.forward()
                 else:
@@ -235,16 +209,11 @@ class ControlMotors:
                 self.pwm.set_pulse_length_in_fraction(self.motor3.pins["PWM"], pwm_width3)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
-            pass
 
         # motor4
         if pwm_width4 != self.pwm4_old:
-            if not self.motor4.is_active():
-                self.motor4.wake()
-                if not self.motor4.is_active():
-                    ValueError("Sterownik nie chce wstac")
-            if (-1 < pwm_width4 < 1):
+            self.motor4.wake()
+            if -1 < pwm_width4 < 1:
                 if pwm_width4 >= 0:
                     self.motor4.forward()
                 else:
@@ -253,8 +222,6 @@ class ControlMotors:
                 self.pwm.set_pulse_length_in_fraction(self.motor4.pins["PWM"], pwm_width4)
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
-        else:
-            pass
 
         self.pwm.update()
         self.pwm1_old = pwm_width1
