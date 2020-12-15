@@ -4,7 +4,11 @@ import roslib
 import math 
 import numpy
 import time
+<<<<<<< HEAD
 import wiringpi
+=======
+import RPi.GPIO as GPIO
+>>>>>>> test/loop
 
 # Messages
 from std_msgs.msg import Float32
@@ -16,11 +20,8 @@ class LLC_encoder:
         wiringpi.pinMode(self.a, wiringpi.GPIO.INPUT)
         wiringpi.pinMode(self.b, wiringpi.GPIO.INPUT)
 
-        wiringpi.pullUpDnControl(self.a, wiringpi.GPIO.PUD_DOWN)
-        wiringpi.pullUpDnControl(self.b, wiringpi.GPIO.PUD_DOWN)
-
-        wiringpi.wiringPiISR(self.a, wiringpi.GPIO.INT_EDGE_BOTH, self.count)
-        wiringpi.wiringPiISR(self.b, wiringpi.GPIO.INT_EDGE_BOTH, self.count)
+        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=1)
+        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=1)
 
         self.gear_ratio = 3.6
         self.enc_impulses_per_motor_rot = 20
@@ -30,7 +31,7 @@ class LLC_encoder:
         self.aLastState = False
         self.bLastState = False
         self.counter = 0
-        self.aLastState = wiringpi.digitalRead(self.a)
+        self.aLastState = GPIO.input(self.a)
 
     def read_rotations(self):
         return self.counter / self.enc_impulses_per_wheel_rot
@@ -38,9 +39,9 @@ class LLC_encoder:
     def reset(self):
         self.counter = 0
 
-    def count(self):
-        self.aState = wiringpi.digitalRead(self.a)
-        self.bState = wiringpi.digitalRead(self.b)
+    def count(self, channel):
+        self.aState = GPIO.input(self.a)
+        self.bState = GPIO.input(self.b)
         if self.aLastState != self.aState:
             if wiringpi.digitalRead(self.b) != self.aState:
                 self.counter -= 1
@@ -48,7 +49,7 @@ class LLC_encoder:
                 self.counter += 1
 
         if self.bLastState != self.bState:
-            if wiringpi.digitalRead(self.a) == self.bState:
+            if GPIO.input(self.a) == self.bState:
                 self.counter -= 1
             else:
                 self.counter += 1
@@ -59,9 +60,9 @@ class WheelsEncodersPublishers:
     def __init__(self):
         wiringpi.wiringPiSetupGpio()
         rospy.init_node("encoders_node")
-        self.enc1 = LLC_encoder(26, 21)
+        self.enc1 = LLC_encoder(21, 26) #lustrzane odbicie/podmiana pinow
         self.enc2 = LLC_encoder(13, 16)
-        self.enc3 = LLC_encoder(25, 5)
+        self.enc3 = LLC_encoder(5, 25) #lustrzane odbicie/podmiana pinow
         self.enc4 = LLC_encoder(18, 27)
 
         self.wheel_1_vel_publisher = rospy.Publisher("wheel_1_vel", Float32, queue_size=10)
@@ -77,6 +78,7 @@ class WheelsEncodersPublishers:
         self.enc2_data = self.enc2.read_rotations()
         self.enc3_data = self.enc3.read_rotations()
         self.enc4_data = self.enc4.read_rotations()
+        self.buffer_4 = 0
 
     def enc_2_rads(self, enc_cms):
         prop_revolution = (enc_cms) / (2.0*math.pi*self.R)
@@ -92,15 +94,15 @@ class WheelsEncodersPublishers:
         enc3_delta = self.enc3.read_rotations() - self.enc3_data
         enc4_delta = self.enc4.read_rotations() - self.enc4_data
 
-        wheel_1_angular_vel = enc1_delta * 2 * math.pi * self.R / dt
-        wheel_2_angular_vel = enc2_delta * 2 * math.pi * self.R / dt
-        wheel_3_angular_vel = enc3_delta * 2 * math.pi * self.R / dt
-        wheel_4_angular_vel = enc4_delta * 2 * math.pi * self.R / dt
+        wheel_1_angular_vel = enc1_delta * 2 * math.pi / dt
+        wheel_2_angular_vel = enc2_delta * 2 * math.pi / dt
+        wheel_3_angular_vel = enc3_delta * 2 * math.pi / dt
+        wheel_4_angular_vel = enc4_delta * 2 * math.pi / dt
 
+        self.wheel_4_vel_publisher.publish(wheel_4_angular_vel)
         self.wheel_1_vel_publisher.publish(wheel_1_angular_vel)
         self.wheel_2_vel_publisher.publish(wheel_2_angular_vel)
         self.wheel_3_vel_publisher.publish(wheel_3_angular_vel)
-        self.wheel_4_vel_publisher.publish(wheel_4_angular_vel)
 
         self.enc1_data = self.enc1.read_rotations()
         self.enc2_data = self.enc2.read_rotations()
