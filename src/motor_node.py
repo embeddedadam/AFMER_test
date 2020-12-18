@@ -73,7 +73,7 @@ class ControlMotors:
         rospy.init_node("motors_controller")
         self.pi = pigpio.pi()
         self.pwm = wavePWM.PWM(self.pi)
-        self.pwm.set_frequency(12500)
+        self.pwm.set_frequency(10000)
         self.pid_on = True
 
         self.motor1 = LLC_motor(name="motor1")
@@ -81,10 +81,10 @@ class ControlMotors:
         self.motor3 = LLC_motor(name="motor3")
         self.motor4 = LLC_motor(name="motor4")
 
-        self.rate = rospy.get_param("~rate", 10)
-        self.Kp = rospy.get_param('~Kp', 20.0)
+        self.rate = rospy.get_param("~rate", 5)
+        self.Kp = rospy.get_param('~Kp', 0.8)
         self.Ki = rospy.get_param('~Ki', 0.0)
-        self.Kd = rospy.get_param('~Kd', 0.0)
+        self.Kd = rospy.get_param('~Kd', 0.8)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
@@ -121,7 +121,7 @@ class ControlMotors:
 
         # Tangential velocity target
         self.wheel1_tangent_vel_target = 0
-        self.wheel2_tangent_vel_target = 0
+        self.wheel2_tangent_vel_target = 1.0
         self.wheel3_tangent_vel_target = 0
         self.wheel4_tangent_vel_target = 0
 

@@ -4,7 +4,6 @@ import roslib
 import math 
 import numpy
 import time
-import wiringpi
 import RPi.GPIO as GPIO
 
 # Messages
@@ -12,10 +11,11 @@ from std_msgs.msg import Float32
 
 class LLC_encoder:
     def __init__(self, pin_a, pin_b):
+        GPIO.setmode(GPIO.BCM)
         self.a = pin_a
         self.b = pin_b
-        wiringpi.pinMode(self.a, wiringpi.GPIO.INPUT)
-        wiringpi.pinMode(self.b, wiringpi.GPIO.INPUT)
+        GPIO.setup(self.a, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=1)
         GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=1)
@@ -40,7 +40,7 @@ class LLC_encoder:
         self.aState = GPIO.input(self.a)
         self.bState = GPIO.input(self.b)
         if self.aLastState != self.aState:
-            if wiringpi.digitalRead(self.b) != self.aState:
+            if GPIO.input(self.b) != self.aState:
                 self.counter -= 1
             else:
                 self.counter += 1
@@ -55,7 +55,6 @@ class LLC_encoder:
 
 class WheelsEncodersPublishers:
     def __init__(self):
-        wiringpi.wiringPiSetupGpio()
         rospy.init_node("encoders_node")
         self.enc1 = LLC_encoder(21, 26) #lustrzane odbicie/podmiana pinow
         self.enc2 = LLC_encoder(13, 16)
@@ -67,7 +66,7 @@ class WheelsEncodersPublishers:
         self.wheel_3_vel_publisher = rospy.Publisher("wheel_3_vel", Float32, queue_size=10)
         self.wheel_4_vel_publisher = rospy.Publisher("wheel_4_vel", Float32, queue_size=10)
 
-        self.rate = rospy.get_param('~rate', 10)
+        self.rate = rospy.get_param('~rate', 5)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
         self.time_prev_update = rospy.Time.now()
 
