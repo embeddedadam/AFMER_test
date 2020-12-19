@@ -249,7 +249,7 @@ class PWM:
                      pigpio.pulse(1<<g,    0, micros - on),
                      ])
       if not null_wave:
-         print("---Detected Non-Null wave")
+         # print("---Detected Non-Null wave")
          if not self.stop:
             new_wid = self.pi.wave_create()
             if self.old_wid is not None:
@@ -263,8 +263,8 @@ class PWM:
             else:
                self.pi.wave_send_repeat(new_wid)
             self.old_wid = new_wid
-      else:
-         print("---Detected Null wave")
+      # else:
+         # print("---Detected Null wave")
 
    def cancel(self):
       """

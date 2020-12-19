@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import rospy
 import roslib
+import math # tylko dla math.pi
 import board
 import busio
 from gpiozero import DigitalOutputDevice
@@ -11,6 +12,7 @@ import digitalio
 import pigpio
 from std_msgs.msg import Float32
 import wavePWM
+import rotary_encoder
 
 i2c = busio.I2C(board.SCL, board.SDA)
 MCP18 = MCP23017(i2c)
@@ -19,7 +21,6 @@ MCP18 = MCP23017(i2c)
 Low level motor control class.
 Provide pinout numbering for each instance of LLC_motor class.
 '''
-
 
 class LLC_motor:
     def __init__(self, name):
@@ -68,21 +69,32 @@ class LLC_motor:
         self.sleep()
 
 
-class ControlMotors:
+class closed_loop_controller:
     def __init__(self):
-        rospy.init_node("motors_controller")
+        rospy.init_node("closed_loop_controller")
         self.pi = pigpio.pi(show_errors=True)
         self.pwm = wavePWM.PWM(self.pi)
         self.pwm.set_frequency(10000)
         self.pid_on = True
         self.turning_off = False
+        self.time_prev_update = rospy.Time.now()
+
+        self.encoder1 = rotary_encoder.decoder(self.pi, 21, 26)
+        self.encoder2 = rotary_encoder.decoder(self.pi, 13, 16)
+        self.encoder3 = rotary_encoder.decoder(self.pi, 5, 25)
+        self.encoder4 = rotary_encoder.decoder(self.pi, 18, 27)
+
+        self.wheel_1_vel_publisher = rospy.Publisher("wheel_1_vel", Float32, queue_size=10)
+        self.wheel_2_vel_publisher = rospy.Publisher("wheel_2_vel", Float32, queue_size=10)
+        self.wheel_3_vel_publisher = rospy.Publisher("wheel_3_vel", Float32, queue_size=10)
+        self.wheel_4_vel_publisher = rospy.Publisher("wheel_4_vel", Float32, queue_size=10)
 
         self.motor1 = LLC_motor(name="motor1")
         self.motor2 = LLC_motor(name="motor2")
         self.motor3 = LLC_motor(name="motor3")
         self.motor4 = LLC_motor(name="motor4")
 
-        self.rate = rospy.get_param("~rate", 40)
+        self.rate = rospy.get_param("~rate", 20)
         self.Kp = rospy.get_param('~Kp', 10) # 0.8
         self.Ki = rospy.get_param('~Ki', 0.0)
         self.Kd = rospy.get_param('~Kd', 0.0)
@@ -92,33 +104,27 @@ class ControlMotors:
         self.slew_rate = 0.04
         self.saturation = 0.7
 
-        # Read in encoders for PID control
-        self.wheel1_angular_vel_enc_sub = rospy.Subscriber('wheel_1_vel', Float32, self.wheel1_angular_vel_enc_callback)
-        self.wheel2_angular_vel_enc_sub = rospy.Subscriber('wheel_2_vel', Float32, self.wheel2_angular_vel_enc_callback)
-        self.wheel3_angular_vel_enc_sub = rospy.Subscriber('wheel_3_vel', Float32, self.wheel3_angular_vel_enc_callback)
-        self.wheel4_angular_vel_enc_sub = rospy.Subscriber('wheel_4_vel', Float32, self.wheel4_angular_vel_enc_callback)
-
         # Read errors
-        self.wheel1_error = rospy.Publisher('wheel1_error', Float32, queue_size=1)
-        self.wheel2_error = rospy.Publisher('wheel2_error', Float32, queue_size=1)
-        self.wheel3_error = rospy.Publisher('wheel3_error', Float32, queue_size=1)
-        self.wheel4_error = rospy.Publisher('wheel4_error', Float32, queue_size=1)
+        self.wheel1_error = rospy.Publisher('wheel_1_error', Float32, queue_size=1)
+        self.wheel2_error = rospy.Publisher('wheel_2_error', Float32, queue_size=1)
+        self.wheel3_error = rospy.Publisher('wheel_3_error', Float32, queue_size=1)
+        self.wheel4_error = rospy.Publisher('wheel_4_error', Float32, queue_size=1)
 
         # Read in tangential velocity targets
-        self.wheel1_tangent_vel_target_sub = rospy.Subscriber('wheel1_tangent_vel_target', Float32,
+        self.wheel1_tangent_vel_target_sub = rospy.Subscriber('wheel_1_tangent_vel_target', Float32,
                                                               self.wheel1_tangent_vel_target_callback)
-        self.wheel2_tangent_vel_target_sub = rospy.Subscriber('wheel2_tangent_vel_target', Float32,
+        self.wheel2_tangent_vel_target_sub = rospy.Subscriber('wheel_2_tangent_vel_target', Float32,
                                                               self.wheel2_tangent_vel_target_callback)
-        self.wheel3_tangent_vel_target_sub = rospy.Subscriber('wheel3_tangent_vel_target', Float32,
+        self.wheel3_tangent_vel_target_sub = rospy.Subscriber('wheel_3_tangent_vel_target', Float32,
                                                               self.wheel3_tangent_vel_target_callback)
-        self.wheel4_tangent_vel_target_sub = rospy.Subscriber('wheel4_tangent_vel_target', Float32,
+        self.wheel4_tangent_vel_target_sub = rospy.Subscriber('wheel_4_tangent_vel_target', Float32,
                                                               self.wheel4_tangent_vel_target_callback)
 
         # Publish computed values
-        self.wheel1_angular_vel_target_pub = rospy.Publisher("wheel1_calc_angular_vel", Float32, queue_size=1)
-        self.wheel2_angular_vel_target_pub = rospy.Publisher("wheel2_calc_angular_vel", Float32, queue_size=1)
-        self.wheel3_angular_vel_target_pub = rospy.Publisher("wheel3_calc_angular_vel", Float32, queue_size=1)
-        self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel4_calc_angular_vel", Float32, queue_size=1)
+        self.wheel1_angular_vel_target_pub = rospy.Publisher("wheel_1_calc_angular_vel", Float32, queue_size=1)
+        self.wheel2_angular_vel_target_pub = rospy.Publisher("wheel_2_calc_angular_vel", Float32, queue_size=1)
+        self.wheel3_angular_vel_target_pub = rospy.Publisher("wheel_3_calc_angular_vel", Float32, queue_size=1)
+        self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel_4_calc_angular_vel", Float32, queue_size=1)
 
         # Tangential velocity target
         self.wheel1_tangent_vel_target = 0
@@ -126,40 +132,21 @@ class ControlMotors:
         self.wheel3_tangent_vel_target = 0
         self.wheel4_tangent_vel_target = 0
 
-        # Angular velocity target
-        self.wheel1_angular_vel_target = 0
-        self.wheel2_angular_vel_target = 0
-        self.wheel3_angular_vel_target = 0
-        self.wheel4_angular_vel_target = 0
-
-        # Angular velocity encoder readings
-        self.wheel1_angular_vel_enc = 0
-        self.wheel2_angular_vel_enc = 0
-        self.wheel3_angular_vel_enc = 0
-        self.wheel4_angular_vel_enc = 0
-
         # PID control variables
         self.wheel1_pid = {}
         self.wheel2_pid = {}
         self.wheel3_pid = {}
         self.wheel4_pid = {}
 
+        self.enc1_prev_rotations = 0
+        self.enc2_prev_rotations = 0
+        self.enc3_prev_rotations = 0
+        self.enc4_prev_rotations = 0
+
         self.pwm1_old = 0
         self.pwm2_old = 0
         self.pwm3_old = 0
         self.pwm4_old = 0
-
-    def wheel1_angular_vel_enc_callback(self, msg):
-        self.wheel1_angular_vel_enc = msg.data
-
-    def wheel2_angular_vel_enc_callback(self, msg):
-        self.wheel2_angular_vel_enc = msg.data
-
-    def wheel3_angular_vel_enc_callback(self, msg):
-        self.wheel3_angular_vel_enc = msg.data
-
-    def wheel4_angular_vel_enc_callback(self, msg):
-        self.wheel4_angular_vel_enc = msg.data
 
     def wheel1_tangent_vel_target_callback(self, msg):
         self.wheel1_tangent_vel_target = msg.data
@@ -173,14 +160,13 @@ class ControlMotors:
     def wheel4_tangent_vel_target_callback(self, msg):
         self.wheel4_tangent_vel_target = msg.data
 
-    # Compute angular velocity target
     def tangentvel_2_angularvel(self, tangent_vel):
         # v = wr
         # v - tangential velocity (m/s)
         # w - angular velocity (rad/s)
         # r - radius of wheel (m)
         angular_vel = tangent_vel / self.R
-        print("-----ang_vel: {}, tang_vel: {}, R: {}-----------".format(angular_vel, tangent_vel, self.R))
+        # print("-----ang_vel: {}, tang_vel: {}, R: {}-----------".format(angular_vel, tangent_vel, self.R))
         return angular_vel
 
     def set_speed(self, pwm_width1, pwm_width2, pwm_width3, pwm_width4):
@@ -265,9 +251,9 @@ class ControlMotors:
                 self.Kp * wheel_pid['error_curr'] + self.Ki * wheel_pid['integral'] + self.Kd * wheel_pid[
             'derivative'])
 
-        # if target == 0:  # Not moving
-        #     control_signal = 0
-        #     return control_signal
+        if target == 0 and (-0.1<wheel_pid['error_curr']<0.1):  # Not moving
+            control_signal = 0
+            return control_signal
 
         if abs(control_signal - wheel_pid['control_prev']) > self.slew_rate:
             if control_signal > wheel_pid['control_prev']:
@@ -286,38 +272,66 @@ class ControlMotors:
         return control_signal
 
     def wheels_update(self):
-        self.wheel1_angular_vel_target = self.tangentvel_2_angularvel(self.wheel1_tangent_vel_target)
-        self.wheel1_angular_vel_target_pub.publish(self.wheel1_angular_vel_target)
+        time_curr_update = rospy.Time.now()
+        dt = (time_curr_update - self.time_prev_update).to_sec() # zmienić na nanosekundy
+        
+        enc1_rotations = self.encoder1.read_rotations()
+        enc2_rotations = self.encoder2.read_rotations()
+        enc3_rotations = self.encoder3.read_rotations()
+        enc4_rotations = self.encoder4.read_rotations()
 
-        self.wheel2_angular_vel_target = self.tangentvel_2_angularvel(self.wheel2_tangent_vel_target)
-        self.wheel2_angular_vel_target_pub.publish(self.wheel2_angular_vel_target)
+        enc1_delta = enc1_rotations - self.enc1_prev_rotations
+        enc2_delta = enc2_rotations - self.enc2_prev_rotations
+        enc3_delta = enc3_rotations - self.enc3_prev_rotations
+        enc4_delta = enc4_rotations - self.enc4_prev_rotations
 
-        self.wheel3_angular_vel_target = self.tangentvel_2_angularvel(self.wheel3_tangent_vel_target)
-        self.wheel3_angular_vel_target_pub.publish(self.wheel3_angular_vel_target)
-        # print("nie ustawiono")
-        self.wheel4_angular_vel_target = self.tangentvel_2_angularvel(self.wheel4_tangent_vel_target)
-        self.wheel4_angular_vel_target_pub.publish(self.wheel4_angular_vel_target)
+        wheel_1_angular_vel = enc1_delta * 2 * math.pi / dt
+        wheel_2_angular_vel = enc2_delta * 2 * math.pi / dt
+        wheel_3_angular_vel = enc3_delta * 2 * math.pi / dt
+        wheel_4_angular_vel = enc4_delta * 2 * math.pi / dt
 
-        self.wheel1_error.publish(self.wheel1_angular_vel_target-self.wheel1_angular_vel_enc)
-        self.wheel2_error.publish(self.wheel2_angular_vel_target-self.wheel2_angular_vel_enc)
-        self.wheel3_error.publish(self.wheel3_angular_vel_target-self.wheel3_angular_vel_enc)
-        self.wheel4_error.publish(self.wheel4_angular_vel_target-self.wheel4_angular_vel_enc)
+        self.wheel_1_vel_publisher.publish(wheel_1_angular_vel)
+        self.wheel_2_vel_publisher.publish(wheel_2_angular_vel)
+        self.wheel_3_vel_publisher.publish(wheel_3_angular_vel)
+        self.wheel_4_vel_publisher.publish(wheel_4_angular_vel)
+
+        self.enc1_prev_rotations = enc1_rotations
+        self.enc2_prev_rotations = enc2_rotations
+        self.enc3_prev_rotations = enc3_rotations
+        self.enc4_prev_rotations = enc4_rotations
+
+        wheel_1_angular_vel_target = self.tangentvel_2_angularvel(self.wheel1_tangent_vel_target)
+        self.wheel1_angular_vel_target_pub.publish(wheel_1_angular_vel_target)
+
+        wheel_2_angular_vel_target = self.tangentvel_2_angularvel(self.wheel2_tangent_vel_target)
+        self.wheel2_angular_vel_target_pub.publish(wheel_2_angular_vel_target)
+
+        wheel_3_angular_vel_target = self.tangentvel_2_angularvel(self.wheel3_tangent_vel_target)
+        self.wheel3_angular_vel_target_pub.publish(wheel_3_angular_vel_target)
+
+        wheel_4_angular_vel_target = self.tangentvel_2_angularvel(self.wheel4_tangent_vel_target)
+        self.wheel4_angular_vel_target_pub.publish(wheel_4_angular_vel_target)
+
+        self.wheel1_error.publish(wheel_1_angular_vel_target-wheel_1_angular_vel)
+        self.wheel2_error.publish(wheel_2_angular_vel_target-wheel_2_angular_vel)
+        self.wheel3_error.publish(wheel_3_angular_vel_target-wheel_3_angular_vel)
+        self.wheel4_error.publish(wheel_4_angular_vel_target-wheel_4_angular_vel)
 
         if self.pid_on:
-            wheel1_motor_cmd = self.pid_control(self.wheel1_pid, self.wheel1_angular_vel_target,
-                                                self.wheel1_angular_vel_enc)
-            wheel2_motor_cmd = self.pid_control(self.wheel2_pid, self.wheel2_angular_vel_target,
-                                                self.wheel2_angular_vel_enc)
-            wheel3_motor_cmd = self.pid_control(self.wheel3_pid, self.wheel3_angular_vel_target,
-                                                self.wheel3_angular_vel_enc)
-            wheel4_motor_cmd = self.pid_control(self.wheel4_pid, self.wheel4_angular_vel_target,
-                                                self.wheel4_angular_vel_enc)
+            wheel1_motor_cmd = self.pid_control(self.wheel1_pid, wheel_1_angular_vel_target,
+                                                wheel_1_angular_vel)
+            wheel2_motor_cmd = self.pid_control(self.wheel2_pid, wheel_2_angular_vel_target,
+                                                wheel_2_angular_vel)
+            wheel3_motor_cmd = self.pid_control(self.wheel3_pid, wheel_3_angular_vel_target,
+                                                wheel_3_angular_vel)
+            wheel4_motor_cmd = self.pid_control(self.wheel4_pid, wheel_4_angular_vel_target,
+                                                wheel_4_angular_vel)
 
         print("PWM1: {}, PWM2: {}, PWM3: {}, PWM4: {}".format(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd,
                                                               wheel4_motor_cmd))
 
         self.set_speed(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd, wheel4_motor_cmd)
-        # print("ustawiono")
+        self.time_prev_update = time_curr_update
 
     def spin(self):
         rospy.loginfo("Start motors_controller")
@@ -341,16 +355,19 @@ class ControlMotors:
     def shutdown(self):
         rospy.loginfo("Stop motors_controller")
         self.turning_off = True
-        # Stop message
         print("setting 0 speed on shutdown")
         self.set_speed(0, 0, 0, 0)
+        # self.encoder1.cancel()
+        # self.encoder2.cancel()
+        # self.encoder3.cancel()
+        # self.encoder4.cancel()
         print("stopping pi object on shutdown")
         self.pi.stop()
         rospy.sleep(1)
 
 
 def main():
-    controls_to_motors = ControlMotors()
+    controls_to_motors = closed_loop_controller()
     controls_to_motors.spin()
 
 

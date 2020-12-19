@@ -16,8 +16,8 @@ class LLC_encoder:
         GPIO.setup(self.a, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(self.b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=1)
-        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=1)
+        GPIO.add_event_detect(self.a, GPIO.BOTH, callback=self.count, bouncetime=0.1)
+        GPIO.add_event_detect(self.b, GPIO.BOTH, callback=self.count, bouncetime=0.1)
 
         self.gear_ratio = 3.6
         self.enc_impulses_per_motor_rot = 20
@@ -65,7 +65,7 @@ class WheelsEncodersPublishers:
         self.wheel_3_vel_publisher = rospy.Publisher("wheel_3_vel", Float32, queue_size=10)
         self.wheel_4_vel_publisher = rospy.Publisher("wheel_4_vel", Float32, queue_size=10)
 
-        self.rate = rospy.get_param('~rate', 40)
+        self.rate = rospy.get_param('~rate', 20)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
         self.time_prev_update = rospy.Time.now()
 
