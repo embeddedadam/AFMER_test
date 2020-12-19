@@ -230,6 +230,7 @@ class PWM:
             on = int(self.pS[g] * self.micros)
             length = int(self.pL[g] * self.micros)
             micros = int(self.micros)
+            print("on: %i, length: %i, micros: %i" % (on, length, micros))
             if length <= 0:
                self.pi.wave_add_generic([pigpio.pulse(0, 1<<g, micros)])
             elif length >= micros:

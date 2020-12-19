@@ -128,7 +128,7 @@ class closed_loop_controller:
 
         # Tangential velocity target
         self.wheel1_tangent_vel_target = 0
-        self.wheel2_tangent_vel_target = 3
+        self.wheel2_tangent_vel_target = 0.5
         self.wheel3_tangent_vel_target = 0
         self.wheel4_tangent_vel_target = 0
 
@@ -226,6 +226,7 @@ class closed_loop_controller:
         # if (self.pwm1_old != pwm_width1) or (self.pwm2_old != pwm_width2) or (self.pwm3_old != pwm_width3) or (self.pwm4_old != pwm_width4):
         #     self.pwm.update()
         self.pwm.update()
+        # print(pwm_width2)
         self.pwm1_old = pwm_width1
         self.pwm2_old = pwm_width2
         self.pwm3_old = pwm_width3
@@ -348,7 +349,7 @@ class closed_loop_controller:
             A = (1000+(t2.nsecs-t1.nsecs)/(10**6))%1000
             S = (1000+(t3.nsecs-t2.nsecs)/(10**6))%1000
             T = (1000+(t3.nsecs-t1.nsecs)/(10**6))%1000
-            print("Act: %.3f, Slp: %.3f, Tot: %.3f" % (A, S, T))
+            # print("Act: %.3f, Slp: %.3f, Tot: %.3f" % (A, S, T))
 
         rospy.spin()
 

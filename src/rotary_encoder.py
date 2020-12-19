@@ -35,20 +35,21 @@ class decoder:
         else:
             self.levB = level
 
-            self.lastGpio = gpio
+        self.lastGpio = gpio
 
-            if   gpio == self.gpioA and level == 1:
-                if self.levB == 1:
-                    self.count(1)
-            elif gpio == self.gpioB and level == 1:
-                if self.levA == 1:
-                    self.count(-1)
-
-    def count(self, way):
-        self.counter += way
+        if gpio == self.gpioA:
+            if self.levA == self.levB:
+                self.counter += 1
+            else:
+                self.counter -= 1
+        elif gpio == self.gpioB:
+            if self.levA == self.levB:
+                self.counter -= 1
+            else:
+                self.counter += 1
 
     def read_rotations(self):
-        return self.counter / self.gear_ratio / self.pulses_per_rotation
+        return (self.counter / self.gear_ratio / self.pulses_per_rotation)
 
     def cancel(self):
 
