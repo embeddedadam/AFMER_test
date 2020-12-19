@@ -83,13 +83,13 @@ class ControlMotors:
         self.motor4 = LLC_motor(name="motor4")
 
         self.rate = rospy.get_param("~rate", 40)
-        self.Kp = rospy.get_param('~Kp', 0.8) # 0.8
+        self.Kp = rospy.get_param('~Kp', 10) # 0.8
         self.Ki = rospy.get_param('~Ki', 0.0)
-        self.Kd = rospy.get_param('~Kd', 0.8) # 0.8
+        self.Kd = rospy.get_param('~Kd', 0.0)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
-        self.slew_rate = 0.001
+        self.slew_rate = 0.04
         self.saturation = 0.7
 
         # Read in encoders for PID control
@@ -121,10 +121,10 @@ class ControlMotors:
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel4_calc_angular_vel", Float32, queue_size=1)
 
         # Tangential velocity target
-        self.wheel1_tangent_vel_target = 2.0
-        self.wheel2_tangent_vel_target = 1.0
-        self.wheel3_tangent_vel_target = 0.5
-        self.wheel4_tangent_vel_target = 4.5
+        self.wheel1_tangent_vel_target = 0
+        self.wheel2_tangent_vel_target = 3
+        self.wheel3_tangent_vel_target = 0
+        self.wheel4_tangent_vel_target = 0
 
         # Angular velocity target
         self.wheel1_angular_vel_target = 0
@@ -180,6 +180,7 @@ class ControlMotors:
         # w - angular velocity (rad/s)
         # r - radius of wheel (m)
         angular_vel = tangent_vel / self.R
+        print("-----ang_vel: {}, tang_vel: {}, R: {}-----------".format(angular_vel, tangent_vel, self.R))
         return angular_vel
 
     def set_speed(self, pwm_width1, pwm_width2, pwm_width3, pwm_width4):
@@ -236,9 +237,9 @@ class ControlMotors:
             else:
                 ValueError("Wartosc sygnalu z poza dozwolonego zakresu! --> <-1, 1>")
 
-        if (self.pwm1_old != pwm_width1) or (self.pwm2_old != pwm_width2) or (self.pwm3_old != pwm_width3) or (self.pwm4_old != pwm_width4):
-            self.pwm.update()
-        # self.pwm.update()
+        # if (self.pwm1_old != pwm_width1) or (self.pwm2_old != pwm_width2) or (self.pwm3_old != pwm_width3) or (self.pwm4_old != pwm_width4):
+        #     self.pwm.update()
+        self.pwm.update()
         self.pwm1_old = pwm_width1
         self.pwm2_old = pwm_width2
         self.pwm3_old = pwm_width3
