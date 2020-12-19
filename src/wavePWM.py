@@ -222,21 +222,14 @@ class PWM:
       """
       Updates the PWM for each GPIO to reflect the current settings.
       """
-      self.pi.wave_clear()
-
+      # self.pi.wave_clear()
       null_wave = True
-
       for g in range(self._MAX_GPIO):
-
          if self.used[g]:
-
             null_wave = False
-
             on = int(self.pS[g] * self.micros)
             length = int(self.pL[g] * self.micros)
-
             micros = int(self.micros)
-
             if length <= 0:
                self.pi.wave_add_generic([pigpio.pulse(0, 1<<g, micros)])
             elif length >= micros:
@@ -255,42 +248,30 @@ class PWM:
                      pigpio.pulse(   0, 1<<g,    on - off),
                      pigpio.pulse(1<<g,    0, micros - on),
                      ])
-
       if not null_wave:
-
+         print("---Detected Non-Null wave")
          if not self.stop:
-
             new_wid = self.pi.wave_create()
-
             if self.old_wid is not None:
-
                self.pi.wave_send_using_mode(
                   new_wid, pigpio.WAVE_MODE_REPEAT_SYNC)
-
                # Spin until the new wave has started.
-
                while self.pi.wave_tx_at() != new_wid:
-
                   pass
-
                # It is then safe to delete the old wave.
-
                self.pi.wave_delete(self.old_wid)
-
             else:
-
                self.pi.wave_send_repeat(new_wid)
-
             self.old_wid = new_wid
+      else:
+         print("---Detected Null wave")
 
    def cancel(self):
       """
       Cancels PWM on the GPIO.
       """
       self.stop = True
-
       self.pi.wave_tx_stop()
-
       if self.old_wid is not None:
          self.pi.wave_delete(self.old_wid)
 

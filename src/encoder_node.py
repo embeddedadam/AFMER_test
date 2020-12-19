@@ -2,7 +2,6 @@
 import rospy
 import roslib
 import math 
-import numpy
 import time
 import RPi.GPIO as GPIO
 
@@ -66,7 +65,7 @@ class WheelsEncodersPublishers:
         self.wheel_3_vel_publisher = rospy.Publisher("wheel_3_vel", Float32, queue_size=10)
         self.wheel_4_vel_publisher = rospy.Publisher("wheel_4_vel", Float32, queue_size=10)
 
-        self.rate = rospy.get_param('~rate', 5)
+        self.rate = rospy.get_param('~rate', 40)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
         self.time_prev_update = rospy.Time.now()
 
