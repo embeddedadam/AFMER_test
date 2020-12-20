@@ -74,7 +74,7 @@ class closed_loop_controller:
         rospy.init_node("closed_loop_controller")
         self.pi = pigpio.pi(show_errors=True)
         self.pwm = wavePWM.PWM(self.pi)
-        self.pwm.set_frequency(10000)
+        self.pwm.set_frequency(20000)
         self.pid_on = True
         self.turning_off = False
         self.time_prev_update = rospy.Time.now()
@@ -94,15 +94,23 @@ class closed_loop_controller:
         self.motor3 = LLC_motor(name="motor3")
         self.motor4 = LLC_motor(name="motor4")
 
-        self.rate = rospy.get_param("~rate", 20)
-        self.Kp = rospy.get_param('~Kp', 10) # 0.8
+        self.motor1.wake()
+        self.motor2.wake()
+        self.motor3.wake()
+        self.motor4.wake()
+
+        self.rate = rospy.get_param("~rate", 40)
+        self.Kp = rospy.get_param('~Kp', 0.8) # 0.8
         self.Ki = rospy.get_param('~Ki', 0.0)
-        self.Kd = rospy.get_param('~Kd', 0.0)
+        self.Kd = rospy.get_param('~Kd', 0.1)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
-        self.slew_rate = 0.04
+        self.slew_rate = 0.2/self.rate
         self.saturation = 0.7
+        self.enc_poll_size = 10
+        self. enc_poll_cutoff_high = 5
+        self.enc_poll_cutoff_low = 1
 
         # Read errors
         self.wheel1_error = rospy.Publisher('wheel_1_error', Float32, queue_size=1)
@@ -127,10 +135,10 @@ class closed_loop_controller:
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel_4_calc_angular_vel", Float32, queue_size=1)
 
         # Tangential velocity target
-        self.wheel1_tangent_vel_target = 0
-        self.wheel2_tangent_vel_target = 0.5
+        self.wheel1_tangent_vel_target = 2
+        self.wheel2_tangent_vel_target = 2
         self.wheel3_tangent_vel_target = 0
-        self.wheel4_tangent_vel_target = 0
+        self.wheel4_tangent_vel_target = 2
 
         # PID control variables
         self.wheel1_pid = {}
@@ -147,6 +155,19 @@ class closed_loop_controller:
         self.pwm2_old = 0
         self.pwm3_old = 0
         self.pwm4_old = 0
+
+        self.enc_1_list = [0]*self.enc_poll_size
+        self.enc_2_list = [0]*self.enc_poll_size
+        self.enc_3_list = [0]*self.enc_poll_size
+        self.enc_4_list = [0]*self.enc_poll_size
+    
+    def shift_and_calc_avg(self, enc_poll, new_value):
+        # print(10*"%.3f, " % tuple(enc_poll))
+        enc_poll.append(enc_poll.pop(0))
+        enc_poll[-1] = new_value
+        temp_list = enc_poll
+        temp_list.sort()
+        return enc_poll, sum(temp_list[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])/len(enc_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
 
     def wheel1_tangent_vel_target_callback(self, msg):
         self.wheel1_tangent_vel_target = msg.data
@@ -172,7 +193,7 @@ class closed_loop_controller:
     def set_speed(self, pwm_width1, pwm_width2, pwm_width3, pwm_width4):
         # motor1
         if pwm_width1 != self.pwm1_old:
-            self.motor1.wake()
+            # self.motor1.wake()
             if -1 < pwm_width1 < 1:
                 if pwm_width1 >= 0:
                     self.motor1.forward()
@@ -185,7 +206,7 @@ class closed_loop_controller:
 
         # motor2
         if pwm_width2 != self.pwm2_old:
-            self.motor2.wake()
+            # self.motor2.wake()
             if -1 < pwm_width2 < 1:
                 if pwm_width2 >= 0:
                     self.motor2.forward()
@@ -198,7 +219,7 @@ class closed_loop_controller:
 
         # motor3
         if pwm_width3 != self.pwm3_old:
-            self.motor3.wake()
+            # self.motor3.wake()
             if -1 < pwm_width3 < 1:
                 if pwm_width3 >= 0:
                     self.motor3.forward()
@@ -211,7 +232,7 @@ class closed_loop_controller:
 
         # motor4
         if pwm_width4 != self.pwm4_old:
-            self.motor4.wake()
+            # self.motor4.wake()
             if -1 < pwm_width4 < 1:
                 if pwm_width4 >= 0:
                     self.motor4.forward()
@@ -276,10 +297,15 @@ class closed_loop_controller:
         time_curr_update = rospy.Time.now()
         dt = (time_curr_update - self.time_prev_update).to_sec() # zmienić na nanosekundy
         
-        enc1_rotations = self.encoder1.read_rotations()
-        enc2_rotations = self.encoder2.read_rotations()
-        enc3_rotations = self.encoder3.read_rotations()
-        enc4_rotations = self.encoder4.read_rotations()
+        self.enc_1_list, enc1_rotations = self.shift_and_calc_avg(self.enc_1_list, self.encoder1.read_rotations())
+        self.enc_2_list, enc2_rotations = self.shift_and_calc_avg(self.enc_2_list, self.encoder2.read_rotations())
+        self.enc_3_list, enc3_rotations = self.shift_and_calc_avg(self.enc_3_list, self.encoder3.read_rotations())
+        self.enc_4_list, enc4_rotations = self.shift_and_calc_avg(self.enc_4_list, self.encoder4.read_rotations())
+
+#        enc1_rotations = self.encoder1.read_rotations()
+#        enc2_rotations = self.encoder2.read_rotations()
+#        enc3_rotations = self.encoder3.read_rotations()
+#        enc4_rotations = self.encoder4.read_rotations()
 
         enc1_delta = enc1_rotations - self.enc1_prev_rotations
         enc2_delta = enc2_rotations - self.enc2_prev_rotations
@@ -346,9 +372,9 @@ class closed_loop_controller:
             t2 = rospy.Time.now()
             rate.sleep()
             t3 = rospy.Time.now()
-            A = (1000+(t2.nsecs-t1.nsecs)/(10**6))%1000
-            S = (1000+(t3.nsecs-t2.nsecs)/(10**6))%1000
-            T = (1000+(t3.nsecs-t1.nsecs)/(10**6))%1000
+            # A = (1000+(t2.nsecs-t1.nsecs)/(10**6))%1000
+            # S = (1000+(t3.nsecs-t2.nsecs)/(10**6))%1000
+            # T = (1000+(t3.nsecs-t1.nsecs)/(10**6))%1000
             # print("Act: %.3f, Slp: %.3f, Tot: %.3f" % (A, S, T))
 
         rospy.spin()
@@ -356,6 +382,7 @@ class closed_loop_controller:
     def shutdown(self):
         rospy.loginfo("Stop motors_controller")
         self.turning_off = True
+        rospy.sleep(2/self.rate)
         print("setting 0 speed on shutdown")
         self.set_speed(0, 0, 0, 0)
         # self.encoder1.cancel()
