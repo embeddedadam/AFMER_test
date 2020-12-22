@@ -27,8 +27,7 @@
       <param name="publish_tf"    value="true"/>
     </node>
 		
-    <node pkg="AFMER_description" name="encoders_node" type="encoder_node"/>
-    <node pkg="AFMER_description" name="motors_node" type="motor_node"/>
+    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller"/>
 
 		<!-- Start Google Cartographer node with custom configuration file-->
     <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args="
