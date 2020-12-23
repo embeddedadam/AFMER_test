@@ -29,10 +29,10 @@ class LLC_motor:
                         DIR|PWM|SLP|FLT|CS|PWR
         """
         self.motors = {
-            "motor1": (19, 20, 8, 7, 6, 9),
-            "motor2": (12, 6, 10, 6, 5, 11),
-            "motor3": (23, 22, 12, 5, 7, 13),
-            "motor4": (17, 4, 14, 4, 4, 15)
+            "motor1": (19, 20, 12, 7, 6, 8),
+            "motor2": (12, 6, 13, 6, 5, 9),
+            "motor3": (23, 22, 14, 5, 7, 10),
+            "motor4": (17, 4, 15, 4, 4, 11)
         }
 
         self.pins = {
@@ -135,10 +135,10 @@ class closed_loop_controller:
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel_4_calc_angular_vel", Float32, queue_size=1)
 
         # Tangential velocity target
-        self.wheel1_tangent_vel_target = 2
-        self.wheel2_tangent_vel_target = 2
-        self.wheel3_tangent_vel_target = 0
-        self.wheel4_tangent_vel_target = 2
+        self.wheel1_tangent_vel_target = .5
+        self.wheel2_tangent_vel_target = .5
+        self.wheel3_tangent_vel_target = .5
+        self.wheel4_tangent_vel_target = .5
 
         # PID control variables
         self.wheel1_pid = {}
