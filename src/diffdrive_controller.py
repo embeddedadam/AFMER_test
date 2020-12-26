@@ -12,15 +12,15 @@ class CmdVelToDiffDriveMotors:
         rospy.init_node('diffdrive_controller')
         self.cmdvel_sub = rospy.Subscriber('cmd_vel', Twist, self.twistCallback)
 
-        self.wheel1_tangent_vel_target_pub = rospy.Publisher('wheel1_tangent_vel_target', Float32, queue_size=10)
-        self.wheel2_tangent_vel_target_pub = rospy.Publisher('wheel2_tangent_vel_target', Float32, queue_size=10)
-        self.wheel3_tangent_vel_target_pub = rospy.Publisher('wheel3_tangent_vel_target', Float32, queue_size=10)
-        self.wheel4_tangent_vel_target_pub = rospy.Publisher('wheel4_tangent_vel_target', Float32, queue_size=10)
+        self.wheel1_tangent_vel_target_pub = rospy.Publisher('wheel_1_tangent_vel_target', Float32, queue_size=10)
+        self.wheel2_tangent_vel_target_pub = rospy.Publisher('wheel_2_tangent_vel_target', Float32, queue_size=10)
+        self.wheel3_tangent_vel_target_pub = rospy.Publisher('wheel_3_tangent_vel_target', Float32, queue_size=10)
+        self.wheel4_tangent_vel_target_pub = rospy.Publisher('wheel_4_tangent_vel_target', Float32, queue_size=10)
 
         self.L = rospy.get_param('~robot_wheel_separation_distance', 0.4319)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
-        self.rate = rospy.get_param('~rate', 50)
+        self.rate = rospy.get_param('~rate', 20)
         self.timeout_idle = rospy.get_param('~timeout_idle', 2)
         self.time_prev_update = rospy.Time.now()
 

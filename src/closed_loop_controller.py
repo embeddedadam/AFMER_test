@@ -99,17 +99,17 @@ class closed_loop_controller:
         self.motor3.wake()
         self.motor4.wake()
 
-        self.rate = rospy.get_param("~rate", 40)
-        self.Kp = rospy.get_param('~Kp', 0.8) # 0.8
-        self.Ki = rospy.get_param('~Ki', 0.0)
-        self.Kd = rospy.get_param('~Kd', 0.1)
+        self.rate = rospy.get_param("~rate", 20)
+        self.Kp = rospy.get_param('~Kp', 0.001) # 0.8
+        self.Ki = rospy.get_param('~Ki', 0.02)
+        self.Kd = rospy.get_param('~Kd', 0.001)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
         self.slew_rate = 0.2/self.rate
         self.saturation = 0.7
         self.enc_poll_size = 10
-        self. enc_poll_cutoff_high = 5
+        self.enc_poll_cutoff_high = 5
         self.enc_poll_cutoff_low = 1
 
         # Read errors
@@ -135,10 +135,10 @@ class closed_loop_controller:
         self.wheel4_angular_vel_target_pub = rospy.Publisher("wheel_4_calc_angular_vel", Float32, queue_size=1)
 
         # Tangential velocity target
-        self.wheel1_tangent_vel_target = .5
-        self.wheel2_tangent_vel_target = .5
-        self.wheel3_tangent_vel_target = .5
-        self.wheel4_tangent_vel_target = .5
+        self.wheel1_tangent_vel_target = 0
+        self.wheel2_tangent_vel_target = 0
+        self.wheel3_tangent_vel_target = 0
+        self.wheel4_tangent_vel_target = 0
 
         # PID control variables
         self.wheel1_pid = {}

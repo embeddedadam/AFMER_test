@@ -35,7 +35,7 @@
                                         <relative_minimum>-100</relative_minimum>
                                         <type>2</type>
                                     </scale>
-                                    <topic>/wheel2_error</topic>
+                                    <topic>/wheel_2_error</topic>
                                     <type>std_msgs/Float32</type>
                                 </x_axis>
                                 <y_axis>
@@ -48,7 +48,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/wheel2_error</topic>
+                                    <topic>/wheel_2_error</topic>
                                     <type>std_msgs/Float32</type>
                                 </y_axis>
                             </axes>
@@ -86,7 +86,7 @@
                                         <relative_minimum>-100</relative_minimum>
                                         <type>2</type>
                                     </scale>
-                                    <topic>/wheel2_calc_angular_vel</topic>
+                                    <topic>/wheel_2_calc_angular_vel</topic>
                                     <type>std_msgs/Float32</type>
                                 </x_axis>
                                 <y_axis>
@@ -99,7 +99,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/wheel2_calc_angular_vel</topic>
+                                    <topic>/wheel_2_calc_angular_vel</topic>
                                     <type>std_msgs/Float32</type>
                                 </y_axis>
                             </axes>
@@ -180,7 +180,7 @@
                     <legend>
                         <visible>true</visible>
                     </legend>
-                    <plot_rate>10</plot_rate>
+                    <plot_rate>40</plot_rate>
                     <title>PID tuning</title>
                 </column_0>
             </row_0>
