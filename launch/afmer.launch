@@ -2,7 +2,7 @@
 		<!-- Load robot description and start state publisher-->
     <param name="robot_description" textfile="$(find AFMER_description)/urdf/afmer.urdf" />
 
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen"/>
 		
 		<!-- Start RPLIDAR sensor node which provides LaserScan data  -->
     <node name="rplidarNode" pkg="rplidar_ros" type="rplidarNode" output="screen">
@@ -25,9 +25,10 @@
       <param name="gain_acc" value="0.01"/>
       <param name="gain_mag" value="0.01"/>
       <param name="publish_tf"    value="true"/>
+      <remap from="/imu/data" to="/imu"/>
     </node>
 		
-    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller"/>
+    <!--node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller"-->
 
 		<!-- Start Google Cartographer node with custom configuration file-->
     <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args="

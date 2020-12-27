@@ -1,4 +1,4 @@
 <launch>
   <!-- Start RViz with custom view -->
-  <node pkg="rviz" type="rviz" name="show_rviz" args="-d $(find AFMER)/rviz/demo.rviz"/>    
+  <node pkg="rviz" type="rviz" name="show_rviz" args="-d $(find AFMER_description)/rviz/demo.rviz"/>    
 </launch>
