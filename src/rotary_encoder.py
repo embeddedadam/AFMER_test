@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import pigpio
+import time
+import math
 
 class decoder:
 
@@ -14,6 +16,12 @@ class decoder:
         self.counter = 0
         self.gear_ratio = 3.6
         self.pulses_per_rotation = 20
+        self.enc_poll_size = 10
+        self.enc_poll_cutoff_high = 5
+        self.enc_poll_cutoff_low = 2
+        self.enc_poll = [0]*self.enc_poll_size
+        self.previous_filtered_rotations = 0
+        self.previous_time = time.time()
 
         self.levA = 0
         self.levB = 0
@@ -51,11 +59,34 @@ class decoder:
     def read_rotations(self):
         return (self.counter / self.gear_ratio / self.pulses_per_rotation)
 
-    def cancel(self):
+    def rotate_enc_poll(self):
+        # print(10*"%.3f, " % tuple(self.enc_poll))
+        self.enc_poll.append(self.enc_poll.pop(0))
+        # print(10*"%.3f, " % tuple(self.enc_poll))
+        self.enc_poll[-1] = self.read_rotations()
+        # print(10*"%.3f, " % tuple(self.enc_poll))
+        # print('-----')
 
+    def read_filtered_rotations(self):
+        self.rotate_enc_poll()
+        temp_poll = self.enc_poll.copy()
+        temp_poll.sort()
+        temp_poll_sum = sum(temp_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
+        temp_poll_len = len(temp_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
+        return temp_poll_sum / temp_poll_len
+
+    def read_vel(self):
+        t = time.time()
+        filtered_rotations = self.read_filtered_rotations()
+        delta = filtered_rotations - self.previous_filtered_rotations
+        self.previous_filtered_rotations = filtered_rotations
+        dt = t - self.previous_time
+        self.previous_time = t
+        return delta * 2 * math.pi / dt
+
+    def cancel(self):
         """
         Cancel the rotary encoder decoder.
         """
-
         self.cbA.cancel()
         self.cbB.cancel()

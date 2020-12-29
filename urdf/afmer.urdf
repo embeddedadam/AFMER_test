@@ -1,16 +1,6 @@
 <?xml version="1.0"?>
 <robot name="AFMER">
 
-    <gazebo>
-        <static>false</static>
-      
-        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <robotNamespace>/afmer</robotNamespace>
-            <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
-            <legacyModeNS>true</legacyModeNS>
-        </plugin>
-    </gazebo>
-
     <link name="dummy"></link>
     
     <material name="orange">
@@ -296,49 +286,5 @@
         <child link="imu_link" />
         <origin xyz="0 0 0" />
     </joint>
-
-    <transmission name="tran1">
-        <type>transmission_interface/SimpleTransmission</type>
-        <joint name="gear1_to_wheel1">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        </joint>
-        <actuator name="motor1">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-            <mechanicalReduction>1</mechanicalReduction>
-        </actuator>
-    </transmission>
-    
-    <transmission name="tran2">
-        <type>transmission_interface/SimpleTransmission</type>
-        <joint name="gear2_to_wheel2">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        </joint>
-        <actuator name="motor2">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-            <mechanicalReduction>1</mechanicalReduction>
-        </actuator>
-    </transmission>
-    
-    <transmission name="tran3">
-        <type>transmission_interface/SimpleTransmission</type>
-        <joint name="gear3_to_wheel3">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        </joint>
-        <actuator name="motor3">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-            <mechanicalReduction>1</mechanicalReduction>
-        </actuator>
-    </transmission>
-    
-    <transmission name="tran4">
-        <type>transmission_interface/SimpleTransmission</type>
-        <joint name="gear4_to_wheel4">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        </joint>
-        <actuator name="motor4">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-            <mechanicalReduction>1</mechanicalReduction>
-        </actuator>
-    </transmission>
 
 </robot>

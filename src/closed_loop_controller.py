@@ -77,7 +77,6 @@ class closed_loop_controller:
         self.pwm.set_frequency(20000)
         self.pid_on = True
         self.turning_off = False
-        self.time_prev_update = rospy.Time.now()
 
         self.encoder1 = rotary_encoder.decoder(self.pi, 21, 26)
         self.encoder2 = rotary_encoder.decoder(self.pi, 13, 16)
@@ -100,17 +99,14 @@ class closed_loop_controller:
         self.motor4.wake()
 
         self.rate = rospy.get_param("~rate", 20)
-        self.Kp = rospy.get_param('~Kp', 0.001) # 0.8
-        self.Ki = rospy.get_param('~Ki', 0.02)
-        self.Kd = rospy.get_param('~Kd', 0.001)
+        self.Kp = rospy.get_param('~Kp', 0.001) # 0.001
+        self.Ki = rospy.get_param('~Ki', 0.01) # 0.02
+        self.Kd = rospy.get_param('~Kd', 0.0005) # 0.001
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
         self.slew_rate = 0.2/self.rate
-        self.saturation = 0.7
-        self.enc_poll_size = 10
-        self.enc_poll_cutoff_high = 5
-        self.enc_poll_cutoff_low = 1
+        self.saturation = 0.9
 
         # Read errors
         self.wheel1_error = rospy.Publisher('wheel_1_error', Float32, queue_size=1)
@@ -155,19 +151,6 @@ class closed_loop_controller:
         self.pwm2_old = 0
         self.pwm3_old = 0
         self.pwm4_old = 0
-
-        self.enc_1_list = [0]*self.enc_poll_size
-        self.enc_2_list = [0]*self.enc_poll_size
-        self.enc_3_list = [0]*self.enc_poll_size
-        self.enc_4_list = [0]*self.enc_poll_size
-    
-    def shift_and_calc_avg(self, enc_poll, new_value):
-        # print(10*"%.3f, " % tuple(enc_poll))
-        enc_poll.append(enc_poll.pop(0))
-        enc_poll[-1] = new_value
-        temp_list = enc_poll
-        temp_list.sort()
-        return enc_poll, sum(temp_list[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])/len(enc_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
 
     def wheel1_tangent_vel_target_callback(self, msg):
         self.wheel1_tangent_vel_target = msg.data
@@ -253,79 +236,61 @@ class closed_loop_controller:
         self.pwm3_old = pwm_width3
         self.pwm4_old = pwm_width4
 
-    def pid_control(self, wheel_pid, target, state):
+    def pid_control(self, wheel_pid, SP, PV):
         if len(wheel_pid) == 0:
-            wheel_pid.update({'time_prev': rospy.Time.now(), 'derivative': 0, 'integral': 0, 'error_prev': 0,
-                              'error_curr': 0, 'control_prev': 0})
+            wheel_pid.update({'time_last': rospy.Time.now(), 'integral': 0, 'e_last': 0, 'control_last': 0})
 
-        wheel_pid['time_curr'] = rospy.Time.now()
+        time = rospy.Time.now()
+        CV_last = wheel_pid['control_last']
 
         # PID control
-        wheel_pid['dt'] = (wheel_pid['time_curr'] - wheel_pid['time_prev']).to_sec()
-        if wheel_pid['dt'] == 0: return 0
+        dt = (time - wheel_pid['time_last']).to_sec()
+        # print(dt)
+        if dt == 0:
+            return 0
 
-        wheel_pid['error_curr'] = target - state
-        wheel_pid['integral'] = wheel_pid['integral'] + (wheel_pid['error_curr'] * wheel_pid['dt'])
-        wheel_pid['derivative'] = (wheel_pid['error_curr'] - wheel_pid['error_prev']) / wheel_pid['dt']
+        e = SP - PV
+        
+        wheel_pid['integral'] = wheel_pid['integral'] + (e * dt)
 
-        wheel_pid['error_prev'] = wheel_pid['error_curr']
-        control_signal = (
-                self.Kp * wheel_pid['error_curr'] + self.Ki * wheel_pid['integral'] + self.Kd * wheel_pid[
-            'derivative'])
+        P = self.Kp * e
+        I = self.Ki * wheel_pid['integral']
+        D = self.Kd * (e - wheel_pid['e_last']) / dt
+        
+        wheel_pid['e_last'] = e
+        
+        CV = P + I + D
 
-        if target == 0 and (-0.1<wheel_pid['error_curr']<0.1):  # Not moving
-            control_signal = 0
-            return control_signal
+        if SP == 0: # and (-0.1<e<0.1):  # Not moving
+            CV = 0
+        else:
+            if abs(CV - CV_last) > self.slew_rate:
+                if CV > CV_last:
+                    CV = CV_last + self.slew_rate
+                elif CV < CV_last:
+                    CV = CV_last - self.slew_rate
 
-        if abs(control_signal - wheel_pid['control_prev']) > self.slew_rate:
-            if control_signal > wheel_pid['control_prev']:
-                control_signal = wheel_pid['control_prev'] + self.slew_rate
-            elif control_signal < wheel_pid['control_prev']:
-                control_signal = wheel_pid['control_prev'] - self.slew_rate
+            if CV >= self.saturation:
+                CV = self.saturation
+            elif CV <= -self.saturation:
+                CV = -self.saturation
 
-        if control_signal >= self.saturation:
-            control_signal = self.saturation
-        elif control_signal <= -self.saturation:
-            control_signal = -self.saturation
+            CV = round(CV, 3)
 
-        wheel_pid['time_prev'] = wheel_pid['time_curr']
-        control_signal = round(control_signal, 3)
-        wheel_pid['control_prev'] = control_signal
-        return control_signal
+        wheel_pid['control_last'] = CV
+        wheel_pid['time_last'] = time
+        return CV
 
     def wheels_update(self):
-        time_curr_update = rospy.Time.now()
-        dt = (time_curr_update - self.time_prev_update).to_sec() # zmienić na nanosekundy
-        
-        self.enc_1_list, enc1_rotations = self.shift_and_calc_avg(self.enc_1_list, self.encoder1.read_rotations())
-        self.enc_2_list, enc2_rotations = self.shift_and_calc_avg(self.enc_2_list, self.encoder2.read_rotations())
-        self.enc_3_list, enc3_rotations = self.shift_and_calc_avg(self.enc_3_list, self.encoder3.read_rotations())
-        self.enc_4_list, enc4_rotations = self.shift_and_calc_avg(self.enc_4_list, self.encoder4.read_rotations())
-
-#        enc1_rotations = self.encoder1.read_rotations()
-#        enc2_rotations = self.encoder2.read_rotations()
-#        enc3_rotations = self.encoder3.read_rotations()
-#        enc4_rotations = self.encoder4.read_rotations()
-
-        enc1_delta = enc1_rotations - self.enc1_prev_rotations
-        enc2_delta = enc2_rotations - self.enc2_prev_rotations
-        enc3_delta = enc3_rotations - self.enc3_prev_rotations
-        enc4_delta = enc4_rotations - self.enc4_prev_rotations
-
-        wheel_1_angular_vel = enc1_delta * 2 * math.pi / dt
-        wheel_2_angular_vel = enc2_delta * 2 * math.pi / dt
-        wheel_3_angular_vel = enc3_delta * 2 * math.pi / dt
-        wheel_4_angular_vel = enc4_delta * 2 * math.pi / dt
+        wheel_1_angular_vel = self.encoder1.read_vel()
+        wheel_2_angular_vel = self.encoder2.read_vel()
+        wheel_3_angular_vel = self.encoder3.read_vel()
+        wheel_4_angular_vel = self.encoder4.read_vel()
 
         self.wheel_1_vel_publisher.publish(wheel_1_angular_vel)
         self.wheel_2_vel_publisher.publish(wheel_2_angular_vel)
         self.wheel_3_vel_publisher.publish(wheel_3_angular_vel)
         self.wheel_4_vel_publisher.publish(wheel_4_angular_vel)
-
-        self.enc1_prev_rotations = enc1_rotations
-        self.enc2_prev_rotations = enc2_rotations
-        self.enc3_prev_rotations = enc3_rotations
-        self.enc4_prev_rotations = enc4_rotations
 
         wheel_1_angular_vel_target = self.tangentvel_2_angularvel(self.wheel1_tangent_vel_target)
         self.wheel1_angular_vel_target_pub.publish(wheel_1_angular_vel_target)
@@ -358,7 +323,6 @@ class closed_loop_controller:
                                                               wheel4_motor_cmd))
 
         self.set_speed(wheel1_motor_cmd, wheel2_motor_cmd, wheel3_motor_cmd, wheel4_motor_cmd)
-        self.time_prev_update = time_curr_update
 
     def spin(self):
         rospy.loginfo("Start motors_controller")
@@ -367,11 +331,11 @@ class closed_loop_controller:
         rospy.on_shutdown(self.shutdown)
 
         while not rospy.is_shutdown() and not self.turning_off:
-            t1 = rospy.Time.now()
+            # t1 = rospy.Time.now()
             self.wheels_update()
-            t2 = rospy.Time.now()
+            # t2 = rospy.Time.now()
             rate.sleep()
-            t3 = rospy.Time.now()
+            # t3 = rospy.Time.now()
             # A = (1000+(t2.nsecs-t1.nsecs)/(10**6))%1000
             # S = (1000+(t3.nsecs-t2.nsecs)/(10**6))%1000
             # T = (1000+(t3.nsecs-t1.nsecs)/(10**6))%1000
