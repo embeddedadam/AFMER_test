@@ -73,7 +73,8 @@ class decoder:
         temp_poll.sort()
         temp_poll_sum = sum(temp_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
         temp_poll_len = len(temp_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
-        return temp_poll_sum / temp_poll_len
+        temp_poll_average = temp_poll_sum / temp_poll_len
+        return temp_poll[5]
 
     def read_vel(self):
         t = time.time()

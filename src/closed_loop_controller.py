@@ -102,6 +102,11 @@ class closed_loop_controller:
         self.Kp = rospy.get_param('~Kp', 0.001) # 0.001
         self.Ki = rospy.get_param('~Ki', 0.01) # 0.02
         self.Kd = rospy.get_param('~Kd', 0.0005) # 0.001
+        Ts = 1 / self.rate
+        Ti = self.Kp * Ts / self.Ki
+        Td = self.Kd * Ts / self.Kp
+        Kb = 1 / math.sqrt(Ti*Td)
+        self.Kb = rospy.get_param('~Kb', Kb)
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
@@ -263,6 +268,7 @@ class closed_loop_controller:
 
         if SP == 0: # and (-0.1<e<0.1):  # Not moving
             CV = 0
+            wheel_pid['integral'] = 0
         else:
             if abs(CV - CV_last) > self.slew_rate:
                 if CV > CV_last:
@@ -270,14 +276,17 @@ class closed_loop_controller:
                 elif CV < CV_last:
                     CV = CV_last - self.slew_rate
 
-            if CV >= self.saturation:
-                CV = self.saturation
-            elif CV <= -self.saturation:
-                CV = -self.saturation
-
             CV = round(CV, 3)
 
-        wheel_pid['control_last'] = CV
+            if CV >= self.saturation:
+                CV_final = self.saturation
+            elif CV <= -self.saturation:
+                CV_final = -self.saturation
+
+            AW = CV_final - CV
+            wheel_pid['integral'] = wheel_pid['integral'] - AW * self.Kb
+
+        wheel_pid['control_last'] = CV_final
         wheel_pid['time_last'] = time
         return CV
 

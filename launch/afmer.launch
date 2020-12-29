@@ -14,7 +14,9 @@
     </node>
 
     <!-- Start imu sensor node -->
-    <node pkg="MPU9255" name="MPU9255_node" type="MPU9255_node"/>
+    <node pkg="MPU9255" name="MPU9255_node" type="MPU9255_node">
+	<remap from="/imu/data_raw" to="/imu"/>
+	</node>
  
    <node pkg="imu_complementary_filter" type="complementary_filter_node"
       name="complementary_filter_node" output="screen">
@@ -25,7 +27,7 @@
       <param name="gain_acc" value="0.01"/>
       <param name="gain_mag" value="0.01"/>
       <param name="publish_tf"    value="true"/>
-      <remap from="/imu/data" to="/imu"/>
+      <!--remap from="/imu/data" to="/imu"/-->
     </node>
 		
     <!--node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller"-->
@@ -35,6 +37,7 @@
           -configuration_directory
               $(find AFMER_description)/configuration_files
           -configuration_basename afmer_2d.lua" output="screen">
+	<remap from="odom" to="odometry/filtered" />
     </node>
 
 		<!-- Additional node which converts Cartographer map into ROS occupancy grid map. -->
