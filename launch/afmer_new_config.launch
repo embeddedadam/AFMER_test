@@ -1,0 +1,77 @@
+<launch>
+
+    <arg name="no_static_map" default="false"/>
+
+    <arg name="base_global_planner" default="navfn/NavfnROS"/>
+    <arg name="base_local_planner" default="dwa_local_planner/DWAPlannerROS"/>
+     <!-- <arg name="base_local_planner" default="base_local_planner/TrajectoryPlannerROS"/> -->
+
+		<!-- Load robot description and start state publisher-->
+    <param name="robot_description" textfile="$(find AFMER_description)/urdf/afmer.urdf" />
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen"/>
+		
+		<!-- Start RPLIDAR sensor node which provides LaserScan data  -->
+    <node name="rplidarNode" pkg="rplidar_ros" type="rplidarNode" output="screen">
+        <param name="serial_port" type="string" value="/dev/rplidar"/>
+        <param name="serial_baudrate" type="int" value="115200"/>
+        <param name="frame_id" type="string" value="laser"/>
+        <param name="inverted" type="bool" value="false"/>
+        <param name="angle_compensate" type="bool" value="true"/>
+    </node>
+
+    <!-- Start imu sensor node -->
+    <node pkg="MPU9255" name="MPU9255_node" type="MPU9255_node">
+	<remap from="/imu/data_raw" to="/imu"/>
+	</node>
+ 
+   <node pkg="imu_complementary_filter" type="complementary_filter_node"
+      name="complementary_filter_node" output="screen">
+      <param name="fixed_frame" value="base_link"/>
+      <param name="use_mag" value="true"/>
+      <param name="do_bias_estimation" value="true"/>
+      <param name="do_adaptive_gain" value="true"/>
+      <param name="gain_acc" value="0.01"/>
+      <param name="gain_mag" value="0.01"/>
+      <param name="publish_tf"    value="true"/>
+      <!--remap from="/imu/data" to="/imu"/-->
+    </node>
+		
+    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller.py"/>
+
+		<!-- Start Google Cartographer node with custom configuration file-->
+    <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args="
+          -configuration_directory
+              $(find AFMER_description)/configuration_files
+          -configuration_basename afmer_2d.lua" output="screen">
+	<remap from="odom" to="odometry/filtered" />
+    </node>
+
+		<!-- Additional node which converts Cartographer map into ROS occupancy grid map. -->
+    <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros" type="cartographer_occupancy_grid_node" args="-resolution 0.01" />
+    
+            <!--  ************** Navigation ***************  -->
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+
+        <param name="base_global_planner" value="$(arg base_global_planner)"/>
+        <param name="base_local_planner" value="$(arg base_local_planner)"/>  
+        <rosparam file="$(find AFMER_description)/configuration_files/planner.yaml" command="load"/>
+
+        <!-- observation sources located in costmap_common.yaml -->
+        <rosparam file="$(find AFMER_description)/configuration_files/costmap_common.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find AFMER_description)/configuration_files/costmap_common.yaml" command="load" ns="local_costmap" />
+
+        <!-- local costmap, needs size -->
+        <rosparam file="$(find AFMER_description)/configuration_files/costmap_local.yaml" command="load" ns="local_costmap" />
+        <param name="local_costmap/width" value="10.0"/>
+        <param name="local_costmap/height" value="10.0"/>
+
+        <!-- static global costmap, static map provides size -->
+        <rosparam file="$(find AFMER_description)/configuration_files/costmap_global_static.yaml" command="load" ns="global_costmap" unless="$(arg no_static_map)"/>
+        
+        <!-- global costmap with laser, for odom_navigation_demo -->
+        <rosparam file="$(find AFMER_description)/configuration_files/costmap_global_laser.yaml" command="load" ns="global_costmap" if="$(arg no_static_map)"/>
+        <param name="global_costmap/width" value="100.0" if="$(arg no_static_map)"/>
+        <param name="global_costmap/height" value="100.0" if="$(arg no_static_map)"/>
+  </node>
+</launch>
