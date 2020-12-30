@@ -30,7 +30,7 @@
       <!--remap from="/imu/data" to="/imu"/-->
     </node>
 		
-    <!--node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller"-->
+    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller.py"/>
 
 		<!-- Start Google Cartographer node with custom configuration file-->
     <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args="

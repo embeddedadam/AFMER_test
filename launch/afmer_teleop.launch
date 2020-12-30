@@ -1,7 +1,7 @@
 <launch>
-    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop"
+    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop" output="screen"/>
 
-    <node pkg="AFMER_description" name="diff_drive" type="diff_drive_controller.py"
+    <node pkg="AFMER_description" name="diff_drive" type="diffdrive_controller.py"/>
 		
-    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller"/>
+    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller.py"/>
 </launch>

@@ -267,7 +267,7 @@ class closed_loop_controller:
         CV = P + I + D
 
         if SP == 0: # and (-0.1<e<0.1):  # Not moving
-            CV = 0
+            CV_final = 0
             wheel_pid['integral'] = 0
         else:
             if abs(CV - CV_last) > self.slew_rate:
@@ -282,6 +282,8 @@ class closed_loop_controller:
                 CV_final = self.saturation
             elif CV <= -self.saturation:
                 CV_final = -self.saturation
+            else:
+                CV_final = CV
 
             AW = CV_final - CV
             wheel_pid['integral'] = wheel_pid['integral'] - AW * self.Kb
