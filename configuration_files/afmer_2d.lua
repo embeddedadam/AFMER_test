@@ -43,9 +43,10 @@ options = {
 }
 
 MAP_BUILDER.use_trajectory_builder_2d = true
+MAP_BUILDER.num_background_threads = 4
 
 TRAJECTORY_BUILDER_2D.min_range = 0.10
-TRAJECTORY_BUILDER_2D.max_range = 11.5
+TRAJECTORY_BUILDER_2D.max_range = 10.0
 TRAJECTORY_BUILDER_2D.missing_data_ray_length = 8.5
 TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
@@ -59,6 +60,6 @@ TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
 POSE_GRAPH.constraint_builder.min_score = 0.65
 POSE_GRAPH.constraint_builder.global_localization_min_score = 0.65
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
-POSE_GRAPH.optimize_every_n_nodes = 35
+POSE_GRAPH.optimize_every_n_nodes = 15
 
 return options

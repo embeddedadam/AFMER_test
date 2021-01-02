@@ -99,7 +99,7 @@ class closed_loop_controller:
         self.motor4.wake()
 
         self.rate = rospy.get_param("~rate", 20)
-        self.Kp = rospy.get_param('~Kp', 0.001) # 0.001
+        self.Kp = rospy.get_param('~Kp', 0.002) # 0.001
         self.Ki = rospy.get_param('~Ki', 0.01) # 0.02
         self.Kd = rospy.get_param('~Kd', 0.0005) # 0.001
         Ts = 1 / self.rate
@@ -107,11 +107,13 @@ class closed_loop_controller:
         Td = self.Kd * Ts / self.Kp
         Kb = 1 / math.sqrt(Ti*Td)
         self.Kb = rospy.get_param('~Kb', Kb)
+        print(self.Kb)
+        # self.shutdown()
         self.R = rospy.get_param('~robot_wheel_radius', 0.09)
 
         self.last_control_signal = 0
-        self.slew_rate = 0.2/self.rate
-        self.saturation = 0.9
+        self.slew_rate = 0.6/self.rate
+        self.saturation = 0.3
 
         # Read errors
         self.wheel1_error = rospy.Publisher('wheel_1_error', Float32, queue_size=1)
@@ -255,7 +257,7 @@ class closed_loop_controller:
             return 0
 
         e = SP - PV
-        
+
         wheel_pid['integral'] = wheel_pid['integral'] + (e * dt)
 
         P = self.Kp * e
@@ -286,7 +288,9 @@ class closed_loop_controller:
                 CV_final = CV
 
             AW = CV_final - CV
-            wheel_pid['integral'] = wheel_pid['integral'] - AW * self.Kb
+            print(wheel_pid['integral'])
+            wheel_pid['integral'] = wheel_pid['integral'] + AW * 5 * self.Kb
+            print(wheel_pid['integral'])
 
         wheel_pid['control_last'] = CV_final
         wheel_pid['time_last'] = time

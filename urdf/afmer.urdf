@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 <robot name="AFMER">
 
-    <link name="dummy"></link>
-    
     <material name="orange">
         <color rgba="1.0 0.5 0.2 1" />
     </material>
@@ -214,13 +212,7 @@
         </inertial>
     </link>
 
-    <joint name="dummy_joint" type="fixed">
-        <parent link="dummy"/>
-	<child link="base_link"/>
-	<origin xyz="0 0 0"/>
-    </joint>
-
-    <joint name="gear1_to_wheel1" type="continuous">
+    <joint name="gear1_to_wheel1" type="fixed">
         <parent link="gear_1" />
         <child link="wheel_1" />
         <origin xyz="0.0168437 0 -0.0066257" />
@@ -228,7 +220,7 @@
         <limit effort="10" velocity="1"/>
     </joint>
 
-    <joint name="gear2_to_wheel2" type="continuous">
+    <joint name="gear2_to_wheel2" type="fixed">
         <parent link="gear_2" />
         <child link="wheel_2" />
         <origin xyz="0.0168437 0 -0.0066257" />
@@ -236,7 +228,7 @@
         <limit effort="10" velocity="1"/>
     </joint>
 
-    <joint name="gear3_to_wheel3" type="continuous">
+    <joint name="gear3_to_wheel3" type="fixed">
         <parent link="gear_3" />
         <child link="wheel_3" />
         <origin xyz="-0.0168437 0 -0.0066257" />
@@ -244,7 +236,7 @@
         <limit effort="10" velocity="1" />
     </joint>
 
-    <joint name="gear4_to_wheel4" type="continuous">
+    <joint name="gear4_to_wheel4" type="fixed">
         <parent link="gear_4" />
         <child link="wheel_4" />
         <origin xyz="-0.0168437 0 -0.0066257" />

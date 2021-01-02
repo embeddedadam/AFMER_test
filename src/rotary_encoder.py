@@ -3,6 +3,7 @@
 import pigpio
 import time
 import math
+import OneEuroFilter
 
 class decoder:
 
@@ -16,9 +17,9 @@ class decoder:
         self.counter = 0
         self.gear_ratio = 3.6
         self.pulses_per_rotation = 20
-        self.enc_poll_size = 10
-        self.enc_poll_cutoff_high = 5
-        self.enc_poll_cutoff_low = 2
+        self.enc_poll_size = 5
+        self.enc_poll_cutoff_high = 2
+        self.enc_poll_cutoff_low = 1
         self.enc_poll = [0]*self.enc_poll_size
         self.previous_filtered_rotations = 0
         self.previous_time = time.time()
@@ -74,7 +75,7 @@ class decoder:
         temp_poll_sum = sum(temp_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
         temp_poll_len = len(temp_poll[self.enc_poll_cutoff_low:-self.enc_poll_cutoff_high])
         temp_poll_average = temp_poll_sum / temp_poll_len
-        return temp_poll[5]
+        return temp_poll_average
 
     def read_vel(self):
         t = time.time()
