@@ -12,7 +12,7 @@
         <visual>
           <origin xyz="0 0 0" />
           <geometry>
-            <box size="0.000312 0.000174 0.000022" />
+            <box size="0.0312 0.0174 0.0022" />
           </geometry>
           <material name="orange" />
         </visual>
@@ -22,7 +22,7 @@
         <visual>
           <origin xyz="0 0 0" />
           <geometry>
-            <cylinder length="0.0003" radius="0.00035" />
+            <cylinder length="0.03" radius="0.035" />
           </geometry>
           <material name="gray" />
         </visual>
@@ -32,12 +32,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.01517 -0.0125 0.00545" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="-0.01517 -0.0125 0.00545" />
             <material name="white">
@@ -54,12 +54,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.0414237 -0.029315 0.0120757" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel1.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel1.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel1.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel1.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="-0.0414237 -0.029315 0.0120757" />
             <material name="black">
@@ -76,12 +76,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.0414237 0.004315 0.0120757" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel2.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel2.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel2.dae" scale="0.001 0.001 0.001" />
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel2.dae" scale="0.1 0.1 0.1" />
             </geometry>
             <origin rpy="0 0 0" xyz="-0.0414237 0.004315 0.0120757" />
             <material name="black" />
@@ -96,12 +96,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="0.0110837 -0.029315 0.0120757" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel3.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel3.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel3.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel3.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0.0110837 -0.029315 0.0120757" />
             <material name="black" />
@@ -116,12 +116,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="0.0110837 0.004315 0.0120757" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel4.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel4.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel4.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/wheel4.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0.0110837 0.004315 0.0120757" />
             <material name="black" />
@@ -136,12 +136,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.02458 -0.029315 0.00545" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox1.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox1.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox1.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox1.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="-0.02458 -0.029315 0.00545" />
             <color rgba="1 0 1 1" />
@@ -156,12 +156,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.02458 0.004315 0.00545" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox2.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox2.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox2.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox2.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="-0.02458 0.004315 0.00545" />
             <color rgba="1 0 1 1" />
@@ -176,12 +176,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.00576 -0.029315 0.00545" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox3.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox3.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox3.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox3.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="-0.00576 -0.029315 0.00545" />
             <color rgba="1 0 1 1" />
@@ -196,12 +196,12 @@
         <collision>
             <origin rpy="0 0 0" xyz="-0.00576 0.004315 0.00545" />
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox4.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox4.dae" scale="0.1 0.1 0.1"/>
             </geometry>
         </collision>
         <visual>
             <geometry>
-                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox4.dae" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://AFMER_description/models/AFMER/meshes/gearbox4.dae" scale="0.1 0.1 0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="-0.00576 0.004315 0.00545" />
             <color rgba="1 0 1 1" />
