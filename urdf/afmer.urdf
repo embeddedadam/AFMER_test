@@ -30,7 +30,7 @@
 
     <link name="base_link">
         <collision>
-            <origin rpy="0 0 0" xyz="-0.01517 -0.0125 0.00545" />
+            <origin rpy="0 0 0" xyz="0 0 0" /> ... "-0.01517 -0.0125 0.00545"
             <geometry>
                 <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.01 0.01 0.01"/>
             </geometry>
@@ -39,7 +39,7 @@
             <geometry>
                 <mesh filename="package://AFMER_description/models/AFMER/meshes/main.dae" scale="0.01 0.01 0.01"/>
             </geometry>
-            <origin rpy="0 0 0" xyz="-0.01517 -0.0125 0.00545" />
+            <origin rpy="0 0 0" xyz="0 0 0" /> ... "-0.01517 -0.0125 0.00545"
             <material name="white">
                 <color rgba="1 1 1 1" />
             </material>

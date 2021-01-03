@@ -36,8 +36,9 @@
       <param name="publish_tf"    value="true"/>
       <!--remap from="/imu/data" to="/imu"/-->
     </node>
-		
-    <!-- node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller.py"/ -->
+
+    <node pkg="AFMER_description" name="diffdrive_controller" type="diffdrive_controller.py"/>		
+    <node pkg="AFMER_description" name="closed_loop_controller" type="closed_loop_controller.py"/>
 
 		<!-- Start Google Cartographer node with custom configuration file-->
     <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args="
@@ -51,7 +52,7 @@
     <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros" type="cartographer_occupancy_grid_node" args="-resolution 0.01" />
 
 
-<arg name="use_map_topic" default="false"/>
+<arg name="use_map_topic" default="true"/>
   <arg name="scan_topic" default="scan" />
 
   	<node pkg="amcl" type="amcl" name="amcl">
@@ -104,15 +105,15 @@
 
         <!-- local costmap, needs size -->
         <rosparam file="$(find AFMER_description)/configuration_files/costmap_local.yaml" command="load" ns="local_costmap" />
-        <param name="local_costmap/width" value="10.0"/>
-        <param name="local_costmap/height" value="10.0"/>
+        <param name="local_costmap/width" value="8.0"/>
+        <param name="local_costmap/height" value="8.0"/>
 
         <!-- static global costmap, static map provides size -->
         <rosparam file="$(find AFMER_description)/configuration_files/costmap_global_static.yaml" command="load" ns="global_costmap" unless="$(arg no_static_map)"/>
         
         <!-- global costmap with laser, for odom_navigation_demo -->
         <rosparam file="$(find AFMER_description)/configuration_files/costmap_global_laser.yaml" command="load" ns="global_costmap" if="$(arg no_static_map)"/>
-        <param name="global_costmap/width" value="100.0" if="$(arg no_static_map)"/>
-        <param name="global_costmap/height" value="100.0" if="$(arg no_static_map)"/>
+        <param name="global_costmap/width" value="12.0" if="$(arg no_static_map)"/>
+        <param name="global_costmap/height" value="12.0" if="$(arg no_static_map)"/>
   </node>
 </launch>
